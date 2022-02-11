@@ -3,6 +3,7 @@ arguments="$@"
 chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
 run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
 test_name="phoronix"
+GIT_VERSION="v10.8.1"
 
 #
 # Get the directory we are running out of.
@@ -84,8 +85,11 @@ else
 	#
 	# Right now we only support stress-ng
 	#
+	if [ ! -d i"./phoronix-test-suite" ]; then
+		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
+	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
-	echo 21 > /tmp/ph_opts
+	echo 22 > /tmp/ph_opts
 	echo n >> /tmp/ph_opts
 	
 	#
