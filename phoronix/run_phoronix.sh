@@ -12,6 +12,12 @@ numb_fields=`echo $0 | awk -F '/' '{print NF-1}'`
 run_dir=`echo $0 | cut -d'/' -f1-${numb_fields}`
 tools_git=https://github.com/dvalinrh/test_tools
 
+usage()
+{
+        echo "Usage: $0"
+	source test_tools/general_setup --usage
+}
+
 #
 # Clone the repo that contains the common code and tools
 #
@@ -63,12 +69,6 @@ fi
 #
 
 source test_tools/general_setup "$@"
-
-usage()
-{
-        echo "Usage: $0"
-	source test_tools/general_setup --usage
-}
 
 if [ $to_pbench -eq 1 ]; then
 	source ~/.bashrc
