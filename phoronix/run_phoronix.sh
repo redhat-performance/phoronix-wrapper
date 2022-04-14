@@ -21,6 +21,7 @@ usage()
 #
 # Clone the repo that contains the common code and tools
 #
+show_usage=0
 found=0
 for arg in "$@"; do
 	if [ $found -eq 1 ]; then
@@ -37,7 +38,7 @@ for arg in "$@"; do
 	# result in the script exiting with out giving the test options.
 	#
 	if [[ $arg == "--usage" ]]; then
-		usage $0
+		show_usage=1
 	fi
 done
 
@@ -51,6 +52,10 @@ if [ ! -d "test_tools" ]; then
                 echo pulling git $tools_git failed.
                 exit
         fi
+fi
+
+if [ $show_usage -eq 1 ]; then
+	usage $0
 fi
 
 # Variables set by general setup.
