@@ -15,6 +15,7 @@ tools_git=https://github.com/dvalinrh/test_tools
 usage()
 {
         echo "Usage: $0"
+	echo "--tools_git <value>: git repo to retrieve the required tools from, default is ${tools_git}"
 	source test_tools/general_setup --usage
 }
 
@@ -50,8 +51,10 @@ if [ ! -d "test_tools" ]; then
         git clone $tools_git
         if [ $? -ne 0 ]; then
                 echo pulling git $tools_git failed.
-                exit
+                exit 1
         fi
+else
+	echo Found an existing test_tools directory, using it.
 fi
 
 if [ $show_usage -eq 1 ]; then
@@ -119,3 +122,4 @@ else
 	popd
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 fi
+exit 0
