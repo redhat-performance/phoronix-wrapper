@@ -80,8 +80,8 @@ source test_tools/general_setup "$@"
 
 if [ $to_pbench -eq 1 ]; then
 	source ~/.bashrc
-	echo $TOOLS_BIN/execute_via_pbench_1 --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11
-	$TOOLS_BIN/execute_via_pbench_1 --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11
+	echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11
+	$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" ${arguments} --test ${test_name} --spacing 11
 else
 	if [ $to_user == "ubuntu" ]; then
 		DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-cli
