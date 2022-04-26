@@ -10,7 +10,7 @@ GIT_VERSION="v10.8.1"
 #
 numb_fields=`echo $0 | awk -F '/' '{print NF-1}'`
 run_dir=`echo $0 | cut -d'/' -f1-${numb_fields}`
-tools_git=https://github.com/dvalinrh/test_tools
+tools_git=https://github.com/redhat-performance/test_tools-wrappers
 
 usage()
 {
