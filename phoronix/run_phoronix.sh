@@ -1,15 +1,19 @@
 #!/bin/bash
 arguments="$@"
-chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
-run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
+
+if [[ $0 == "./"* ]]; then
+	run_dir=`pwd`
+else
+	numb_fields=`echo $0 | awk -F '/' '{print NF-1}'`
+	run_dir=`echo $0 | cut -d'/' -f1-${numb_fields}`
+fi
+
 test_name="phoronix"
 GIT_VERSION="v10.8.1"
 
 #
 # Get the directory we are running out of.
 #
-numb_fields=`echo $0 | awk -F '/' '{print NF-1}'`
-run_dir=`echo $0 | cut -d'/' -f1-${numb_fields}`
 tools_git=https://github.com/redhat-performance/test_tools-wrappers
 
 usage()
