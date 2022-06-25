@@ -1,11 +1,18 @@
 #!/bin/bash
 arguments="$@"
 
+curdir=`pwd`
 if [[ $0 == "./"* ]]; then
-	run_dir=`pwd`
+        chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
+        if [[ $chars == 1 ]]; then
+                run_dir=`pwd`
+        else
+                run_dir=`echo $0 | cut -d'/' -f 1-${chars} | cut -d'.' -f2-`
+                run_dir="${curdir}${run_dir}"
+        fi
 else
-	numb_fields=`echo $0 | awk -F '/' '{print NF-1}'`
-	run_dir=`echo $0 | cut -d'/' -f1-${numb_fields}`
+        chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
+        run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
 fi
 
 test_name="phoronix"
@@ -121,6 +128,7 @@ else
 	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+	cp ${curdir}/meta_data.yml $results_dir
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	$run_dir/reduce_phoronix > results_phoronix.csv
 	popd
