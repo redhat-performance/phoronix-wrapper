@@ -128,7 +128,7 @@ else
 	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	cp ${curdir}/meta_data.yml $results_dir
+	cp ${curdir}/meta_data.yml results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	$run_dir/reduce_phoronix > results_phoronix.csv
 	popd
