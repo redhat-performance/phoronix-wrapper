@@ -17,6 +17,13 @@ fi
 
 test_name="phoronix"
 GIT_VERSION="v10.8.1"
+if [ ! -f "phoronix.out" ]; then
+	command="${0} $@}"
+	echo $command
+	script -c "$command}" phoronix.out
+	exit $?
+fi
+
 
 #
 # Get the directory we are running out of.
@@ -129,8 +136,15 @@ else
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	cp ${curdir}/meta_data.yml results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+	cp ${curdir}/phoronix.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	$run_dir/reduce_phoronix > results_phoronix.csv
+	lines=`wc -l results_phoronix.csv | cut -d' ' -f 1`
+	if [ $lines -eq 1 ]; then
+		echo Failed >> test_results_report
+	else
+		echo Ran >> test_results_report
+	fi
 	popd
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 fi
