@@ -38,6 +38,24 @@ usage()
 }
 
 #
+# Amazon linux is running the wrong version of php by default, install a version that phoronix likes
+#
+uname -a | grep -q amzn
+if [ $? -eq 0 ]; then
+	#
+	# Check to see if we need to remove the old php
+	#
+	yum list installed | grep -q php-cli.x86_64
+	if [ $? -eq 0 ]; then
+		#
+		# Remove and add the proper php
+		#
+		yum remove -y php-cli.x86_64 php-common.x86_64 php-xml.x86_64
+		yum install -y  php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64
+	fi
+fi
+
+#
 # Clone the repo that contains the common code and tools
 #
 show_usage=0
