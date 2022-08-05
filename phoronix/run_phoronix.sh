@@ -20,8 +20,12 @@ GIT_VERSION="v10.8.1"
 if [ ! -f "phoronix.out" ]; then
 	command="${0} $@}"
 	echo $command
-	script -c "$command}" phoronix.out
-	exit $?
+	$command &> /tmp/${test_name}.out
+	cat /tmp/${test_name}.out
+	rm /tmp/${test_name}.out
+	exit
+fi
+
 fi
 
 
