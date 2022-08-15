@@ -17,17 +17,14 @@ fi
 
 test_name="phoronix"
 GIT_VERSION="v10.8.1"
-if [ ! -f "phoronix.out" ]; then
-	command="${0} $@}"
+if [ ! -f "/tmp/${test_name}.out" ]; then
+	command="${0} $@"
 	echo $command
 	$command &> /tmp/${test_name}.out
 	cat /tmp/${test_name}.out
 	rm /tmp/${test_name}.out
 	exit
 fi
-
-fi
-
 
 #
 # Get the directory we are running out of.
