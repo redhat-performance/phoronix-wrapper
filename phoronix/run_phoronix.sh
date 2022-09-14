@@ -165,6 +165,7 @@ else
 		echo Ran >> test_results_report
 	fi
 	popd
+	find $results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_${test_name}_${to_tuned_setting}_pbench.tar --files-from=/dev/stdin
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 fi
 exit 0
