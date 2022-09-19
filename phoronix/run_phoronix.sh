@@ -157,7 +157,7 @@ else
 	cp ${curdir}/meta_data.yml results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	cp ${curdir}/phoronix.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	$run_dir/reduce_phoronix > results_phoronix.csv
+	$run_dir/reduce_phoronix > results.csv
 	lines=`wc -l results_phoronix.csv | cut -d' ' -f 1`
 	if [ $lines -eq 1 ]; then
 		echo Failed >> test_results_report
@@ -165,7 +165,7 @@ else
 		echo Ran >> test_results_report
 	fi
 	popd
-	find $results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_${test_name}_${to_tuned_setting}_pbench.tar --files-from=/dev/stdin
+	find -L $results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_${test_name}_${to_tuned_setting}_pbench.tar --files-from=/dev/stdin
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 fi
 exit 0
