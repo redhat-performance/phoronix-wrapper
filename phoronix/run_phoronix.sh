@@ -117,8 +117,17 @@ source test_tools/general_setup "$@"
 
 if [ $to_pbench -eq 1 ]; then
 	source ~/.bashrc
+	move_back=0
+	move_this=`ls /var/lib/pbench-agent/tools-*-default/*/perf`
+	if [ $? -eq 0 ]; then
+		move_back=1
+		mv $move_this /tmp/perf
+	fi
 	echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test $test_name --spacing 11 --pbench_stats $to_pstats
 	$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test $test_name --spacing 11 --pbench_stats $to_pstats
+	if [ $move_back -eq 1 ]; then
+		mv /tmp/perf $move_this
+	fi
 else
 	if [ $to_user == "ubuntu" ]; then
 		DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-cli
@@ -140,6 +149,7 @@ else
 	#
 	# Run phoronix test
 	#
+	rm /tmp/results_${test_name}_${to_tuned_setting}.out
 	for iterations  in 1 `seq 2 1 ${to_times_to_run}`
 	do
 		./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
@@ -159,13 +169,13 @@ else
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	$run_dir/reduce_phoronix > results.csv
 	lines=`wc -l results_phoronix.csv | cut -d' ' -f 1`
-	if [ $lines -eq 1 ]; then
+	if [[ $lines == "1" ]]; then
 		echo Failed >> test_results_report
 	else
 		echo Ran >> test_results_report
 	fi
 	popd
-	find -L $results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_${test_name}_${to_tuned_setting}_pbench.tar --files-from=/dev/stdin
+	find -L results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 fi
 exit 0
