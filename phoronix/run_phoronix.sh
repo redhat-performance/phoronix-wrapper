@@ -113,6 +113,7 @@ fi
 # to_tuned_setting: tuned setting
 #
 
+${curdir}/test_tools/gather_data ${curdir}
 source test_tools/general_setup "$@"
 
 if [ $to_pbench -eq 1 ]; then
@@ -164,7 +165,7 @@ else
 	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	cp ${curdir}/meta_data.yml results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+	${curdir}/test_tools/move_data $curdir $RESULTS_DIR
 	cp ${curdir}/phoronix.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	$run_dir/reduce_phoronix > results.csv
