@@ -162,7 +162,7 @@ else
 		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
-	echo 23 > /tmp/ph_opts
+	echo 24 > /tmp/ph_opts
 	echo n >> /tmp/ph_opts
 	
 	#
