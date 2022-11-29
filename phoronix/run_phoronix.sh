@@ -32,6 +32,7 @@ else
         run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
 fi
 
+dnf update -y
 test_name="phoronix"
 GIT_VERSION="v10.8.1"
 if [ ! -f "/tmp/${test_name}.out" ]; then
