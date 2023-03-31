@@ -175,6 +175,8 @@ while [[ $# -gt 0 ]]; do
 		--test_index)
 		;;
                 -h)
+			usage
+		;;
 	        --usage)
 			usage
                         exit
