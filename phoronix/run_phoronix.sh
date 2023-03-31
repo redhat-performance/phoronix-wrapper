@@ -16,7 +16,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+test_index=24
 arguments="$@"
+
+usage()
+{
+	echo "Usage:"
+	echo "  --test_index: test index to run.  Default is $test_index"
+	echo "  --usage: this usage message"
+	source test_tools/general_setup --usage
+}
 
 curdir=`pwd`
 if [[ $0 == "./"* ]]; then
@@ -134,6 +143,53 @@ fi
 ${curdir}/test_tools/gather_data ${curdir}
 source test_tools/general_setup "$@"
 
+ARGUMENT_LIST=(
+	"test_index"
+)
+
+NO_ARGUMENTS=(
+        "usage"
+)
+
+
+# read arguments
+opts=$(getopt \
+    --longoptions "$(printf "%s:," "${ARGUMENT_LIST[@]}")" \
+    --longoptions "$(printf "%s," "${NO_ARGUMENTS[@]}")" \
+    --name "$(basename "$0")" \
+    --options "h" \
+    -- "$@"
+)
+
+
+# Report any errors
+#
+if [ $? -ne 0 ]; then
+        exit
+fi
+
+eval set --$opts
+
+while [[ $# -gt 0 ]]; do
+        case "$1" in
+		--test_index)
+		;;
+                -h)
+	        --usage)
+			usage
+                        exit
+                ;;
+		--)
+			break;
+		;;
+		*)
+			echo option not found $1
+			exit
+		;;
+        esac
+done
+
+
 if [ $to_pbench -eq 1 ]; then
 	source ~/.bashrc
 	move_back=0
@@ -162,7 +218,7 @@ else
 		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
-	echo 24 > /tmp/ph_opts
+	echo $test_index > /tmp/ph_opts
 	echo n >> /tmp/ph_opts
 	
 	#
