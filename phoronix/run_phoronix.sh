@@ -173,6 +173,8 @@ eval set --$opts
 while [[ $# -gt 0 ]]; do
         case "$1" in
 		--test_index)
+			test_index=$2
+			shift 2
 		;;
                 -h)
 			usage
