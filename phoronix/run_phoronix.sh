@@ -19,6 +19,13 @@
 test_index=24
 arguments="$@"
 
+error_out()
+{
+	echo $1
+	exit $2
+
+}
+
 usage()
 {
 	echo "Usage:"
@@ -48,9 +55,12 @@ if [ ! -f "/tmp/${test_name}.out" ]; then
 	command="${0} $@"
 	echo $command
 	$command &> /tmp/${test_name}.out
-	cat /tmp/${test_name}.out
-	rm /tmp/${test_name}.out
-	exit
+	rtc=$?
+	if [[ -f /tmp/${test_name}.out ]]; then
+		cat /tmp/${test_name}.out
+		rm /tmp/${test_name}.out
+	fi
+	exit $rtc
 fi
 
 #
@@ -79,7 +89,13 @@ if [ $? -eq 0 ]; then
 		# Remove and add the proper php
 		#
 		yum remove -y php-cli.x86_64 php-common.x86_64 php-xml.x86_64
-		yum install -y  php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64
+		if [ $? -ne 0 ]; then
+			error_out "Failed to remove php-cli.x86_64 php-common.x86_64 php-xml.x86_64" 1
+		fi
+	fi
+	yum install -y  php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64
+	if [ $? -ne 0 ]; then
+		error_out "Failed to install php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64" 1
 	fi
 fi
 
@@ -114,8 +130,7 @@ done
 if [ ! -d "test_tools" ]; then
         git clone $tools_git test_tools
         if [ $? -ne 0 ]; then
-                echo pulling git $tools_git failed.
-                exit 1
+                error_out "Error pulling git $tools_git" 1
         fi
 else
 	echo Found an existing test_tools directory, using it.
@@ -160,7 +175,6 @@ opts=$(getopt \
     --options "h" \
     -- "$@"
 )
-
 
 # Report any errors
 #
@@ -219,7 +233,9 @@ else
 	# Right now we only support stress-ng
 	#
 	if [ ! -d i"./phoronix-test-suite" ]; then
+		echo here
 		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
+		echo here 1
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
 	echo $test_index > /tmp/ph_opts
@@ -244,16 +260,16 @@ else
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	cp ${curdir}/phoronix.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+	cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
 	$run_dir/reduce_phoronix > results.csv
-	lines=`wc -l results_phoronix.csv | cut -d' ' -f 1`
+	lines=`wc -l results.csv | cut -d' ' -f 1`
 	if [[ $lines == "1" ]]; then
 		echo Failed >> test_results_report
 	else
 		echo Ran >> test_results_report
 	fi
-	popd
+	popd > /dev/null
 	find -L results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 fi
