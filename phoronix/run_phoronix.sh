@@ -85,17 +85,19 @@ if [ $? -eq 0 ]; then
 	#
 	yum list installed | grep -q php-cli.x86_64
 	if [ $? -eq 0 ]; then
+		packages="php-cli.x86_64 php-common.x86_64 php-xml.x86_64"
 		#
 		# Remove and add the proper php
 		#
-		yum remove -y php-cli.x86_64 php-common.x86_64 php-xml.x86_64
+		yum remove -y $packages
 		if [ $? -ne 0 ]; then
-			error_out "Failed to remove php-cli.x86_64 php-common.x86_64 php-xml.x86_64" 1
+			error_out "Failed to remove $packages" 1
 		fi
 	fi
-	yum install -y  php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64
+	packages="php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64"
+	yum install -y  $packages
 	if [ $? -ne 0 ]; then
-		error_out "Failed to install php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64" 1
+		error_out "Failed to install $packages" 1
 	fi
 fi
 
@@ -179,6 +181,7 @@ opts=$(getopt \
 # Report any errors
 #
 if [ $? -ne 0 ]; then
+	error_out "Error with option parsing" 1
         exit
 fi
 
@@ -202,6 +205,7 @@ while [[ $# -gt 0 ]]; do
 		;;
 		*)
 			echo option not found $1
+			usage
 			exit
 		;;
         esac
@@ -233,9 +237,7 @@ else
 	# Right now we only support stress-ng
 	#
 	if [ ! -d i"./phoronix-test-suite" ]; then
-		echo here
 		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
-		echo here 1
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
 	echo $test_index > /tmp/ph_opts
