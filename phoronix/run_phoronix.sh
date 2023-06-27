@@ -16,7 +16,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+test_index=24
 arguments="$@"
+
+error_out()
+{
+	echo $1
+	exit $2
+
+}
+
+usage()
+{
+	echo "Usage:"
+	echo "  --test_index: test index to run.  Default is $test_index"
+	echo "  --usage: this usage message"
+	source test_tools/general_setup --usage
+}
 
 curdir=`pwd`
 if [[ $0 == "./"* ]]; then
@@ -39,9 +55,12 @@ if [ ! -f "/tmp/${test_name}.out" ]; then
 	command="${0} $@"
 	echo $command
 	$command &> /tmp/${test_name}.out
-	cat /tmp/${test_name}.out
-	rm /tmp/${test_name}.out
-	exit
+	rtc=$?
+	if [[ -f /tmp/${test_name}.out ]]; then
+		cat /tmp/${test_name}.out
+		rm /tmp/${test_name}.out
+	fi
+	exit $rtc
 fi
 
 #
@@ -66,11 +85,19 @@ if [ $? -eq 0 ]; then
 	#
 	yum list installed | grep -q php-cli.x86_64
 	if [ $? -eq 0 ]; then
+		packages="php-cli.x86_64 php-common.x86_64 php-xml.x86_64"
 		#
 		# Remove and add the proper php
 		#
-		yum remove -y php-cli.x86_64 php-common.x86_64 php-xml.x86_64
-		yum install -y  php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64
+		yum remove -y $packages
+		if [ $? -ne 0 ]; then
+			error_out "Failed to remove $packages" 1
+		fi
+	fi
+	packages="php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64"
+	yum install -y  $packages
+	if [ $? -ne 0 ]; then
+		error_out "Failed to install $packages" 1
 	fi
 fi
 
@@ -105,8 +132,7 @@ done
 if [ ! -d "test_tools" ]; then
         git clone $tools_git test_tools
         if [ $? -ne 0 ]; then
-                echo pulling git $tools_git failed.
-                exit 1
+                error_out "Error pulling git $tools_git" 1
         fi
 else
 	echo Found an existing test_tools directory, using it.
@@ -133,6 +159,58 @@ fi
 
 ${curdir}/test_tools/gather_data ${curdir}
 source test_tools/general_setup "$@"
+
+ARGUMENT_LIST=(
+	"test_index"
+)
+
+NO_ARGUMENTS=(
+        "usage"
+)
+
+
+# read arguments
+opts=$(getopt \
+    --longoptions "$(printf "%s:," "${ARGUMENT_LIST[@]}")" \
+    --longoptions "$(printf "%s," "${NO_ARGUMENTS[@]}")" \
+    --name "$(basename "$0")" \
+    --options "h" \
+    -- "$@"
+)
+
+# Report any errors
+#
+if [ $? -ne 0 ]; then
+	error_out "Error with option parsing" 1
+        exit
+fi
+
+eval set --$opts
+
+while [[ $# -gt 0 ]]; do
+        case "$1" in
+		--test_index)
+			test_index=$2
+			shift 2
+		;;
+                -h)
+			usage
+		;;
+	        --usage)
+			usage
+                        exit
+                ;;
+		--)
+			break;
+		;;
+		*)
+			echo option not found $1
+			usage
+			exit
+		;;
+        esac
+done
+
 
 if [ $to_pbench -eq 1 ]; then
 	source ~/.bashrc
@@ -162,7 +240,7 @@ else
 		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
-	echo 24 > /tmp/ph_opts
+	echo $test_index > /tmp/ph_opts
 	echo n >> /tmp/ph_opts
 	
 	#
@@ -184,16 +262,16 @@ else
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	cp ${curdir}/phoronix.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+	cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
 	$run_dir/reduce_phoronix > results.csv
-	lines=`wc -l results_phoronix.csv | cut -d' ' -f 1`
+	lines=`wc -l results.csv | cut -d' ' -f 1`
 	if [[ $lines == "1" ]]; then
 		echo Failed >> test_results_report
 	else
 		echo Ran >> test_results_report
 	fi
-	popd
+	popd > /dev/null
 	find -L results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 fi
