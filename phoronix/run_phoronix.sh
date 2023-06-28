@@ -16,7 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-test_index=24
+test_index="Test All Options"
+
 arguments="$@"
 
 error_out()
@@ -30,22 +31,30 @@ usage()
 {
 	echo "Usage:"
 	echo "  --test_index: test index to run.  Default is $test_index"
+	echo "  --tools_git: Location to pick up the required tools git, default"
+	echo "    https://github.com/redhat-performance/test_tools-wrappers"
 	echo "  --usage: this usage message"
 	source test_tools/general_setup --usage
 }
 
 curdir=`pwd`
 if [[ $0 == "./"* ]]; then
-        chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
-        if [[ $chars == 1 ]]; then
-                run_dir=`pwd`
-        else
-                run_dir=`echo $0 | cut -d'/' -f 1-${chars} | cut -d'.' -f2-`
-                run_dir="${curdir}${run_dir}"
-        fi
+	chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
+	if [[ $chars == 1 ]]; then
+		run_dir=`pwd`
+	else
+		run_dir=`echo $0 | cut -d'/' -f 1-${chars} | cut -d'.' -f2-`
+		run_dir="${curdir}${run_dir}"
+	fi
+elif [[ $0 != "/"* ]]; then
+	dir=`echo $0 | rev | cut -d'/' -f2- | rev`
+	run_dir="${curdir}/${dir}"
 else
-        chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
-        run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
+	chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
+	run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
+	if [[ $run_dir != "/"* ]]; then
+		run_dir=${curdir}/${run_dir}
+	fi
 fi
 
 dnf update -y
@@ -67,13 +76,6 @@ fi
 # Get the directory we are running out of.
 #
 tools_git=https://github.com/redhat-performance/test_tools-wrappers
-
-usage()
-{
-        echo "Usage: $0"
-	echo "--tools_git <value>: git repo to retrieve the required tools from, default is ${tools_git}"
-	source test_tools/general_setup --usage
-}
 
 #
 # Amazon linux is running the wrong version of php by default, install a version that phoronix likes
@@ -236,7 +238,7 @@ else
 	#
 	# Right now we only support stress-ng
 	#
-	if [ ! -d i"./phoronix-test-suite" ]; then
+	if [ ! -d "./phoronix-test-suite" ]; then
 		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
@@ -246,7 +248,9 @@ else
 	#
 	# Run phoronix test
 	#
-	rm /tmp/results_${test_name}_${to_tuned_setting}.out
+	if [[ -f /tmp/results_${test_name}_${to_tuned_setting}.out ]]; then
+		rm /tmp/results_${test_name}_${to_tuned_setting}.out
+	fi
 	for iterations  in 1 `seq 2 1 ${to_times_to_run}`
 	do
 		./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
@@ -257,7 +261,9 @@ else
 	cd /tmp
 	RESULTSDIR=results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
 	mkdir -p ${RESULTSDIR}/${test_name}_results/results_phoronix
-	rm results_${test_name}_${to_tuned_setting}
+	if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
+		rm results_${test_name}_${to_tuned_setting}
+	fi
 	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
