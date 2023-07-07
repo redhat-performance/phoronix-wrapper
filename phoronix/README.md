@@ -22,7 +22,7 @@ To run:
 [root@hawkeye ~]# autohpl-wrapper/auto_hpl/build_run_hpl.sh
 
 The script will set the sizings based on the hardware it is being run.
-
+```
 Options
   --test_index: test index to run.  Default is Test All Options
   --tools_git: Location to pick up the required tools git, default
@@ -42,5 +42,6 @@ General options
   --tuned_setting: used in naming the tar file, default for RHEL is the current active tuned.  For non
     RHEL systems, default is none.
   --usage: this usage message.
+```
 
 Note: The script does not install pbench for you.  You need to do that manually.
