@@ -99,7 +99,13 @@ if [ $? -eq 0 ]; then
 	packages="php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64"
 	yum install -y  $packages
 	if [ $? -ne 0 ]; then
-		error_out "Failed to install $packages" 1
+		#
+		# Just to be difficult Amazon 2 uses even different packages.
+		#
+		dnf install php-pecl-zip.x86_64 git php-cli php-xml php-json
+		if [ $? -ne 0 ]; then
+			error_out "Failed to install $packages" 1
+		fi
 	fi
 fi
 
