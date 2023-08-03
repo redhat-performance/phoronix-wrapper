@@ -102,7 +102,7 @@ if [ $? -eq 0 ]; then
 		#
 		# Just to be difficult Amazon 2 uses even different packages.
 		#
-		dnf install git php-cli php-xml php-json
+		dnf install -y git php-cli php-xml php-json
 		if [ $? -ne 0 ]; then
 			error_out "Failed to install $packages" 1
 		fi
