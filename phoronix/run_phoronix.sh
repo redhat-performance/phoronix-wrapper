@@ -57,7 +57,7 @@ else
 	fi
 fi
 
-dnf update -y
+test_tools/package_tool --update
 test_name="phoronix"
 GIT_VERSION="v10.8.1"
 if [ ! -f "/tmp/${test_name}.out" ]; then
@@ -85,21 +85,26 @@ if [ $? -eq 0 ]; then
 	#
 	# Check to see if we need to remove the old php
 	#
-	yum list installed | grep -q php-cli.x86_64
+	test_tools/package_tool --is_installed php-cli.x86_64
 	if [ $? -eq 0 ]; then
 		packages="php-cli.x86_64 php-common.x86_64 php-xml.x86_64"
 		#
 		# Remove and add the proper php
 		#
-		yum remove -y $packages
+		test_tools/package_tool --remove_packages $packages
 		if [ $? -ne 0 ]; then
 			error_out "Failed to remove $packages" 1
 		fi
 	fi
-	packages="php73-cli.x86_64 php73-common.x86_64 php73-xml.x86_64"
-	yum install -y  $packages
+	test_tools/package_tool --packages php73-cli.x86_64,php73-common.x86_64,php73-xml.x86_64
 	if [ $? -ne 0 ]; then
-		error_out "Failed to install $packages" 1
+		#
+		# Just to be difficult Amazon 2 uses even different packages.
+		#
+		test_tools/package_tool --packages git,php-cli,php-xml,php-json
+		if [ $? -ne 0 ]; then
+			error_out "Failed to install $packages" 1
+		fi
 	fi
 fi
 
