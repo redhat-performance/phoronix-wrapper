@@ -256,32 +256,18 @@ else
 	fi
 	for iterations  in 1 `seq 2 1 ${to_times_to_run}`
 	do
-		./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+		./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> results_${test_name}_${to_tuned_setting}.out
 	done
 	#
 	# Archive up the results.
-	#
-	cd /tmp
-	RESULTSDIR=results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
-	mkdir -p ${RESULTSDIR}/${test_name}_results/results_phoronix
-	if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
-		rm results_${test_name}_${to_tuned_setting}
-	fi
-	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
-
-	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
-	$run_dir/reduce_phoronix > results.csv
-	lines=`wc -l results.csv | cut -d' ' -f 1`
-	if [[ $lines == "1" ]]; then
-		echo Failed >> test_results_report
+	$run_dir/reduce_phoronix > phoronix_results.csv
+	lines=`wc -l $results | cut -d' ' -f1`
+	if [ $lines -lt 2 ]; then
+		echo Failed > $RESULTS_PATH/test_results_report
 	else
-		echo Ran >> test_results_report
+		echo Ran > $RESULTS_PATH/test_results_report
 	fi
-	popd > /dev/null
-	find -L results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
-	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
+
+	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results phoronix_results.csv  --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user --other_files "results_${test_name}_*.out,/tmp/results_${test_name}_${to_tuned_setting}.out" --other_files "$RESULTS_PATH/test_results_report"
 fi
 exit 0
