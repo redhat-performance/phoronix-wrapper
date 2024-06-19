@@ -1,5 +1,5 @@
 #!/bin/bash
-egrep 'Test: |Average' results_phoronix_tuned_*.out | grep -v stress > tmpfile
+egrep 'Test: |Average' results_phoronix_*.out | grep -v stress > tmpfile
 echo "Test:BOPs"
 toggle=0
 while IFS= read -r line
