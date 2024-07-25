@@ -1,0 +1,75 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+        usage;
+fi
+
+while [ $# -gt 0 ]
+do
+        case $1 in
+                -h)
+                        usage;
+                ;;
+                -t)
+                        test_to_run=$2
+                        shift 2
+                ;;
+                *)
+                         usage;
+                ;;
+        esac
+done
+
+#
+# If no test to run designated, bail.
+#
+if [ $test_to_run == "none" ]; then
+        echo You need to designate a test to run.
+        usage
+fi
+
+
+if [ ! -d "./phoronix-test-suite" ]; then
+                git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
+        fi
+        echo 1 | ./phoronix-test-suite/phoronix-test-suite install $test_to_run
+        echo $test_index > /tmp/ph_opts
+        echo n >> /tmp/ph_opts
+
+        #
+        # Run phoronix test
+        #
+        if [[ -f /tmp/results_${test_name}_${to_tuned_setting}.out ]]; then
+                rm /tmp/results_${test_name}_${to_tuned_setting}.out
+        fi
+        for iterations  in 1 `seq 2 1 ${to_times_to_run}`
+        do
+                ./phoronix-test-suite/phoronix-test-suite run $test_to_run < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+        done
+        #
+        # Archive up the results.
+        #
+        cd /tmp
+        RESULTSDIR=results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
+        mkdir -p ${RESULTSDIR}/${test_name}_results/results_phoronix
+        if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
+                rm results_${test_name}_${to_tuned_setting}
+        fi
+        ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
+
+        cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+        ${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+        cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
+        pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
+        $run_dir/reduce_phoronix > results.csv
+        lines=`wc -l results.csv | cut -d' ' -f 1`
+        if [[ $lines == "1" ]]; then
+                echo Failed >> test_results_report
+        else
+                echo Ran >> test_results_report
+        fi
+        popd > /dev/null
+        find -L results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
+        tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
+fi
+exit 0
