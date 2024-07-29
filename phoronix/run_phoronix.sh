@@ -229,9 +229,9 @@ else
         tuned_original=`tuned-adm active | cut -d' ' -f4`
         tuned-adm profile $to_tuned_setting
         fi
-        echo ./phoronix -t ${test} > run_this
-        chmod 755 run_this
-        ./run_this
+  echo ./phoronix -t ${test} --test_index ${test_index} > run_this
+  chmod 755 run_this
+  ./run_this
 
   setenforce 1
 fi

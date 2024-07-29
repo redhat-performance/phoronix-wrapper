@@ -14,6 +14,10 @@ do
                         test_to_run=$2
                         shift 2
                 ;;
+                --test_index)
+                        test_index=$2
+                        shift 2
+                ;;
                 *)
                          usage;
                 ;;
@@ -44,7 +48,7 @@ if [ ! -d "./phoronix-test-suite" ]; then
         fi
         for iterations  in 1 `seq 2 1 ${to_times_to_run}`
         do
-                ./phoronix-test-suite/phoronix-test-suite run $test_to_run < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+        ./phoronix-test-suite/phoronix-test-suite default-run $test_to_run < /tmp/ph_opts >> /tmp/results_${test_name}_${to_tuned_setting}.out
         done
         #
         # Archive up the results.
