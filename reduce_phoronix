@@ -1,0 +1,18 @@
+#!/bin/bash
+echo "reduce*****************************************"
+egrep 'Test: |Average' results_phoronix_*.out | grep -v stress > tmpfile
+echo "Test:BOPs"
+toggle=0
+while IFS= read -r line
+do
+	if [ $toggle -eq 0 ]; then
+		out=`echo $line | cut -d':' -f2 | sed "s/^ //g" | sed "s/\[1\;34m//g"`
+		printf "%s:" "$out"
+		toggle=1
+	else
+		out=`echo $line | cut -d':' -f 2 | cut -d' ' -f 2 | sed "s/\[1\;34m//g"`
+		printf "%s\n" $out
+		toggle=0
+	fi
+done < "tmpfile"
+rm tmpfile
