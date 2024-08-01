@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "reduce*****************************************"
 egrep 'Test: |Average' results_phoronix_*.out | grep -v stress > tmpfile
 echo "Test:BOPs"
 toggle=0
