@@ -42,10 +42,10 @@ usage()
 {
         echo "Usage:"
         echo "  --test_index: test index to run.  Default is $test_index"
+	echo "  --sub_test: test to run"
         echo "  --tools_git: Location to pick up the required tools git, default"
         echo "    https://github.com/redhat-performance/test_tools-wrappers"
         echo "  --usage: this usage message"
-        echo "  -t: test to run"
         source test_tools/general_setup --usage
 }
 
