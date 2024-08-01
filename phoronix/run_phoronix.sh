@@ -227,7 +227,7 @@ if [[ $to_tuned_setting != "none" ]]; then
 fi
 
 if [ ! -d i"./phoronix-test-suite" ]; then
-  git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
+  git clone -b $GIT_VERSION --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 fi
 echo 1 | ./phoronix-test-suite/phoronix-test-suite install $test
 
