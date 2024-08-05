@@ -119,31 +119,13 @@ if [ $show_usage -eq 1 ]; then
 fi
 
 test_tools/package_tool --update
-test_tools/package_tool --packages php73-cli.x86_64,php73-common.x86_64,php73-xml.x86_64
+php_cli=`dnf list | grep  php  |  grep cli | awk '{print $1}'`
+php_common=`dnf list | grep php  | grep common | awk '{print $1}'`
+php_xml=`dnf list | grep php  | grep xml | awk '{print $1}'`
+test_tools/package_tool --packages $php_cli,$php_common,$php_xml
 if [[ $? != "0" ]]; then
-	#
-	# Check to see if we need to remove the old php
-	#
-	test_tools/package_tool --is_installed php-cli.x86_64
-	if [ $? -eq 0 ]; then
-		packages="php-cli.x86_64 php-common.x86_64 php-xml.x86_64"
-		#
-		# Remove and add the proper php
-		#
-		test_tools/package_tool --remove_packages $packages
-		if [ $? -ne 0 ]; then
-			error_out "Failed to remove $packages" 1
-		fi
-	fi
-	test_tools/package_tool --packages php73-cli.x86_64,php73-common.x86_64,php73-xml.x86_64
 	if [ $? -ne 0 ]; then
-		#
-		# Just to be difficult Amazon 2 uses even different packages.
-		#
-		test_tools/package_tool --packages git,php-cli,php-xml,php-json
-		if [ $? -ne 0 ]; then
-			error_out "Failed to install $packages" 1
-		fi
+		error_out "Failed to install $packages" 1
 	fi
 fi
 
