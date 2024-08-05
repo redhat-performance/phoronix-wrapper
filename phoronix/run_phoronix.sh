@@ -281,7 +281,8 @@ else
 		echo Ran >> test_results_report
 	fi
 	popd > /dev/null
-	find -L results_${test_name}_${to_tuned_setting}  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
-	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
+	find -L $RESULTSDIR  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
+	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
+
 fi
 exit 0
