@@ -120,13 +120,20 @@ fi
 
 test_tools/package_tool --update
 php_cli=`dnf list | grep  php  |  grep cli | awk '{print $1}'`
+if [[ $php_cli == "" ]]; then
+	error_out "Did not find a php cli package" 1
+fi
 php_common=`dnf list | grep php  | grep common | awk '{print $1}'`
+if [[ $php_common == "" ]]; then
+	error_out "Did not find a php common package" 1
+fi
 php_xml=`dnf list | grep php  | grep xml | awk '{print $1}'`
+if [[ $php_xml == "" ]]; then
+	error_out "Did not find a php xml package" 1
+fi
 test_tools/package_tool --packages $php_cli,$php_common,$php_xml
 if [[ $? != "0" ]]; then
-	if [ $? -ne 0 ]; then
-		error_out "Failed to install $packages" 1
-	fi
+	error_out "Failed to install one or more $php_cli,$php_common,$php_xml" 1
 fi
 
 # Variables set by general setup.
