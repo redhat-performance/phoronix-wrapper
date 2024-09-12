@@ -119,16 +119,26 @@ if [ $show_usage -eq 1 ]; then
 fi
 
 test_tools/package_tool --update
-for pkg in cli common php; do
-	package=`dnf list | grep  php  | grep $pkg | awk '{print $1}'`
-	if [[ $package == "" ]]; then
-		error_out "Did not find a php $pkg package" 1
-	fi
-	test_tools/package_tool --packages $package
-	if [[ $? != "0" ]]; then
-		error_out "Failed to install one or more $php_cli,$php_common,$php_xml" 1
-	fi
-done
+case "`test_tools/detect_os`" in
+	"ubuntu")
+		test_tools/package_tool --packages "php-cli,php,php-common"
+		if [[ $? != "0" ]]; then
+			error_out "Failed to install one or more php_cli,php_common,php_xml" 1
+		fi
+	;;
+       	*)
+		for pkg in cli common php; do
+			package=`dnf list | grep  php  | grep $pkg | awk '{print $1}'`
+			if [[ $package == "" ]]; then
+				error_out "Did not find a php $pkg package" 1
+			fi
+			test_tools/package_tool --packages $package
+			if [[ $? != "0" ]]; then
+				error_out "Failed to install one or more $php_cli,$php_common,$php_xml" 1
+			fi
+		done
+	;;
+esac
 
 # Variables set by general setup.
 #
