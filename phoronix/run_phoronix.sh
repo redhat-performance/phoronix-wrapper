@@ -118,25 +118,6 @@ if [ $show_usage -eq 1 ]; then
 	usage $0
 fi
 
-test_tools/package_tool --update
-case "`test_tools/detect_os`" in
-	"ubuntu")
-		packages="php-cli,php,php-common"
-	;;
-       	*)
-		for pkg in cli common php; do
-			packages=`dnf list | grep  php  | grep $pkg | awk '{print $1}'`
-			if [[ $packages == "" ]]; then
-				error_out "Did not find a php $pkg package" 1
-			fi
-		done
-	;;
-esac
-test_tools/package_tool --packages "php-cli,php,php-common"
-if [[ $? != "0" ]]; then
-	error_out "Failed to install one or more php_cli,php_common,php_xml" 1
-fi
-
 # Variables set by general setup.
 #
 # TOOLS_BIN: points to the tool directory
