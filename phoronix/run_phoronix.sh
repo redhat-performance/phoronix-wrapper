@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 test_index="Test All Options"
+rtc=0
 
 arguments="$@"
 
@@ -268,6 +269,7 @@ else
 		# We failed, report and do not remove the results_check.csv file.
 		#
 		echo Failed >> test_results_report
+		rtc=1
 	else
 		echo Ran >> test_results_report
 		cat results_check.csv >> results.csv
@@ -278,4 +280,4 @@ else
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
 
 fi
-exit 0
+exit $rtc
