@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 test_index="Test All Options"
+rtc=0
 
 arguments="$@"
 
@@ -244,16 +245,27 @@ else
 	${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
-	$run_dir/reduce_phoronix > results.csv
-	lines=`wc -l results.csv | cut -d' ' -f 1`
+	$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
+	#
+	# We place the results first in results_check.csv so we can check to make sure
+	# the tests actually ran.  After the check, we will add the run info to results.csv.
+	#
+	$run_dir/reduce_phoronix > results_check.csv
+	lines=`wc -l results_check.csv | cut -d' ' -f 1`
 	if [[ $lines == "1" ]]; then
+		#
+		# We failed, report and do not remove the results_check.csv file.
+		#
 		echo Failed >> test_results_report
+		rtc=1
 	else
 		echo Ran >> test_results_report
+		cat results_check.csv >> results.csv
+		rm results_check.csv
 	fi
 	popd > /dev/null
 	find -L $RESULTSDIR  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
 
 fi
-exit 0
+exit $rtc
