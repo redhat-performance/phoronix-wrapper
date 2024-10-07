@@ -235,7 +235,7 @@ else
 
 	  if [[ ${sub_test} == "cockroach" ]]; then
 		  echo $test_index > /tmp/ph_opts
-		  echo $test_index > /tmp/ph_opts
+		  echo $test_index >> /tmp/ph_opts
 	    echo n >> /tmp/ph_opts
 		fi
 
