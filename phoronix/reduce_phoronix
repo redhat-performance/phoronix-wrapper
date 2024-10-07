@@ -1,17 +1,82 @@
 #!/bin/bash
-egrep 'Test: |Average' results_phoronix_tuned_*.out | grep -v stress > tmpfile
-echo "Test:BOPs"
-toggle=0
-while IFS= read -r line
-do
-	if [ $toggle -eq 0 ]; then
-		out=`echo $line | cut -d':' -f2 | sed "s/^ //g" | sed "s/\[1\;34m//g"`
-		printf "%s:" "$out"
-		toggle=1
-	else
-		out=`echo $line | cut -d':' -f 2 | cut -d' ' -f 2 | sed "s/\[1\;34m//g"`
-		printf "%s\n" $out
-		toggle=0
-	fi
-done < "tmpfile"
-rm tmpfile
+
+usage() {
+    echo "HOST NAME or IP REQUIRED!! - see usage below"
+    echo "Usage:"
+    echo "  ./reduce_phoronix --sub_test <test_running>"
+    echo "Options:"
+    echo "  -h          Show help"
+    echo "  --sub_test  Specify the test to run"
+    echo "  --tmp_file  Specify output temp file"
+    exit 1
+}
+
+# Check if an argument is passed
+if [ $# -eq 0 ]; then
+    usage
+fi
+
+# Initialize variables
+test_running="none"
+tmp_file="none"
+# Process command line arguments
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h)
+            usage
+            ;;
+        --sub_test)
+            test_running=$2
+            shift 2
+            ;;
+        --tmp_file)
+            tmp_file=$2
+            shift 2
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+# Check if a test to run is designated
+if [ "$test_running" == "none" ]; then
+    echo "You need to designate a test to run."
+    usage
+fi
+if [ "$tmp_file" == "none" ]; then
+    echo "You need a file to output to"
+    usage
+fi
+
+if [[ "$test_running" == "cockroach" ]]; then
+    echo "Workload:Concurrency:Average:Deviation" > "$tmp_file"
+    # Read and process the results file
+    while IFS= read -r line; do
+        # Check for lines containing workload and concurrency
+        if [[ $line == *Workload* ]]; then
+            # Extract Workload and Concurrency
+            workload=$(echo "$line" | awk -F ': ' '{print $2}' | awk -F ' - ' '{print $1}')
+            concurrency=$(echo "$line" | awk -F ': ' '{print $3}' | tr -d ':')
+        fi
+
+        # Check for average
+        if [[ $line == *Average* ]]; then
+            # Extract Average
+            average=$(echo "$line" | awk -F ': ' '{print $2}' | awk '{print $1}')
+        fi
+
+        # Check for deviation
+        if [[ $line == *Deviation* ]]; then
+            # Extract Deviation
+            deviation=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
+
+            # Append the extracted information to the output file
+            echo "$workload:$concurrency:$average:$deviation" >> "$tmp_file"
+        fi
+        rm tmp_file
+    done < /tmp/results_phoronix_"$test_running"_tuned_*.out
+else
+    echo "Unsupported test: $test_running"
+    exit 1
+fi
