@@ -232,8 +232,13 @@ else
 		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install ${sub_test}
-	echo $test_index > /tmp/ph_opts
-	echo n >> /tmp/ph_opts
+
+	  if [[ ${sub_test} == "cockroach" ]]; then
+		  echo $test_index > /tmp/ph_opts
+		  echo $test_index > /tmp/ph_opts
+	    echo n >> /tmp/ph_opts
+		fi
+
 
 	#
 	# Run phoronix test
