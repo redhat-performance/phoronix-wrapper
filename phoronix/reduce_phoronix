@@ -58,22 +58,39 @@ if [[ "$test_running" == "cockroach" ]]; then
             workload=$(echo "$line" | awk -F ': ' '{print $2}' | awk -F ' - ' '{print $1}')
             concurrency=$(echo "$line" | awk -F ': ' '{print $3}' | tr -d ':')
         fi
-
-        # Check for average
         if [[ $line == *Average* ]]; then
             # Extract Average
             average=$(echo "$line" | awk -F ': ' '{print $2}' | awk '{print $1}')
         fi
-
-        # Check for deviation
         if [[ $line == *Deviation* ]]; then
             # Extract Deviation
             deviation=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
-
             # Append the extracted information to the output file
             echo "$workload:$concurrency:$average:$deviation" >> "$tmp_file"
         fi
-        rm tmp_file
+        rm "$tmp_file"
+    done < /tmp/results_phoronix_"$test_running"_tuned_*.out
+elif [[ "$test_running" == "redis" ]]; then
+    echo "Test:ParallelConnections:Average:Deviation" > "$tmp_file"
+    # Read and process the results file
+    while IFS= read -r line; do
+        # Check for lines containing Test and Parallel Connections
+        if [[ $line == *"Test:"* && $line == *"Parallel Connections:"* ]]; then
+            # Extract Test and Parallel Connections
+            test=$(echo "$line" | awk -F 'Test: ' '{print $2}' | awk -F ' - ' '{print $1}')
+            parallel_connections=$(echo "$line" | awk -F ': ' '{print $3}' | tr -d ':')
+        fi
+        if [[ $line == *"Average:"* ]]; then
+            # Extract Average
+            average=$(echo "$line" | awk -F ': ' '{print $2}' | awk '{print $1}')
+        fi
+        if [[ $line == *"Deviation:"* ]]; then
+            # Extract Deviation
+            deviation=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
+            # Append the extracted information to the output file
+            echo "$test:$parallel_connections:$average:$deviation" >> "$tmp_file"
+        fi
+        rm "$tmp_file"
     done < /tmp/results_phoronix_"$test_running"_tuned_*.out
 else
     echo "Unsupported test: $test_running"

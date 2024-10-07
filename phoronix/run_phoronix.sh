@@ -233,10 +233,13 @@ else
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install ${sub_test}
 
-	  if [[ ${sub_test} == "cockroach" ]]; then
+	  if [[ ${sub_test} == "cockroach" || ${sub_test} == "redis" ]]; then
 		  echo $test_index > /tmp/ph_opts
 		  echo $test_index >> /tmp/ph_opts
 	    echo n >> /tmp/ph_opts
+	  else
+	    echo "Unsupported test: ${sub_test}"
+      exit 1
 		fi
 
 
