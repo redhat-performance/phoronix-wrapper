@@ -248,16 +248,16 @@ else
 	  elif [[ ${sub_test} == "cassandra" ]]; then
 	    echo n > /tmp/ph_opts
 	  elif [[ ${sub_test} == "apache" ]]; then
-	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index > /tmp/ph_opts
 	    echo n >> /tmp/ph_opts
 	  elif [[ ${sub_test} == "apache-iotdb" ]]; then
-	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index > /tmp/ph_opts
 	    echo $test_index >> /tmp/ph_opts
 	    echo $test_index >> /tmp/ph_opts
 	    echo $test_index >> /tmp/ph_opts
 	    echo n >> /tmp/ph_opts
 	  elif [[ ${sub_test} == "hbase" ]]; then
-	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index > /tmp/ph_opts
 	    echo $test_index >> /tmp/ph_opts
 	    echo $test_index >> /tmp/ph_opts
 	    echo n >> /tmp/ph_opts
