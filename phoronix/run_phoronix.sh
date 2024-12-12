@@ -82,7 +82,7 @@ usage()
 	echo "    https://github.com/redhat-performance/test_tools-wrappers"
 	echo "  --usage: this usage message"
 	test_tools/general_setup --usage
-	exit
+	exit 1
 }
 
 show_usage=0
@@ -165,7 +165,6 @@ opts=$(getopt \
 #
 if [ $? -ne 0 ]; then
 	error_out "Error with option parsing" 1
-  exit
 fi
 
 eval set --$opts
@@ -233,9 +232,34 @@ else
 	fi
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install ${sub_test}
 
-	  if [[ ${sub_test} == "cockroach" || ${sub_test} == "redis" ]]; then
+	  if [[ ${sub_test} == "cockroach" ]]; then
 		  echo $test_index > /tmp/ph_opts
 		  echo $test_index >> /tmp/ph_opts
+	    echo n >> /tmp/ph_opts
+	  elif [[ ${sub_test} == "redis" ]]; then
+		  echo $test_index > /tmp/ph_opts
+		  echo $test_index >> /tmp/ph_opts
+	    echo n >> /tmp/ph_opts
+	  elif [[ ${sub_test} == "stress-ng" ]]; then
+	    echo $test_index > /tmp/ph_opts
+	    echo n >> /tmp/ph_opts
+	  elif [[ ${sub_test} == "phpbench" ]]; then
+	    echo n > /tmp/ph_opts
+	  elif [[ ${sub_test} == "cassandra" ]]; then
+	    echo n > /tmp/ph_opts
+	  elif [[ ${sub_test} == "apache" ]]; then
+	    echo $test_index >> /tmp/ph_opts
+	    echo n >> /tmp/ph_opts
+	  elif [[ ${sub_test} == "apache-iotdb" ]]; then
+	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index >> /tmp/ph_opts
+	    echo n >> /tmp/ph_opts
+	  elif [[ ${sub_test} == "hbase" ]]; then
+	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index >> /tmp/ph_opts
+	    echo $test_index >> /tmp/ph_opts
 	    echo n >> /tmp/ph_opts
 	  else
 	    echo "Unsupported test: ${sub_test}"
