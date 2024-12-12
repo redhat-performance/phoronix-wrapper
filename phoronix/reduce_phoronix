@@ -10,6 +10,10 @@ usage() {
     exit 1
 }
 
+# Initialize variables
+test_ran="none"
+tmp_file="none"
+
 reduce_cockroach() {
     echo "Workload:Concurrency:Average:Deviation" > "$tmp_file"
     # Read and process the results file
@@ -81,9 +85,7 @@ if [ $# -eq 0 ]; then
     usage
 fi
 
-# Initialize variables
-test_ran="none"
-tmp_file="none"
+
 # Process command line arguments
 while [ $# -gt 0 ]; do
     case $1 in
@@ -121,5 +123,6 @@ elif [[ "$test_ran" == "redis" ]]; then
 elif [[ "$test_ran" == "stress-ng"]]; then
     reduce_stress_ng
 else
-    echo "Unsupported test: $test_ran
+    echo "Unsupported test: $test_ran"
+    exit 1
 fi
