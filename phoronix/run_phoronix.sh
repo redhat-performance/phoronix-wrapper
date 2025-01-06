@@ -197,6 +197,51 @@ while [[ $# -gt 0 ]]; do
         esac
 done
 
+index_cockroach(){
+  echo $test_index > /tmp/ph_opts
+  echo $test_index >> /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
+index_redis(){
+  echo $test_index > /tmp/ph_opts
+  echo $test_index >> /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
+index_stress_ng(){
+  echo $test_index > /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
+index_phpbench(){
+  echo n >> /tmp/ph_opts
+}
+
+index_cassandra(){
+  echo n >> /tmp/ph_opts
+}
+
+index_apache(){
+  echo $test_index > /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
+index_apache_iotdb(){
+  echo $test_index > /tmp/ph_opts
+  echo $test_index >> /tmp/ph_opts
+  echo $test_index >> /tmp/ph_opts
+  echo $test_index >> /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
+index_hbase(){
+  echo $test_index > /tmp/ph_opts
+  echo $test_index >> /tmp/ph_opts
+  echo $test_index >> /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
 if [[ $sub_test == "none" ]]; then
 	echo You must designate a test.
 	usage $0
@@ -233,34 +278,21 @@ else
 	echo 1 | ./phoronix-test-suite/phoronix-test-suite install ${sub_test}
 
 	  if [[ ${sub_test} == "cockroach" ]]; then
-		  echo $test_index > /tmp/ph_opts
-		  echo $test_index >> /tmp/ph_opts
-	    echo n >> /tmp/ph_opts
+      index_cockroach
 	  elif [[ ${sub_test} == "redis" ]]; then
-		  echo $test_index > /tmp/ph_opts
-		  echo $test_index >> /tmp/ph_opts
-	    echo n >> /tmp/ph_opts
+      index_redis
 	  elif [[ ${sub_test} == "stress-ng" ]]; then
-	    echo $test_index > /tmp/ph_opts
-	    echo n >> /tmp/ph_opts
+      index_stress_ng
 	  elif [[ ${sub_test} == "phpbench" ]]; then
-	    echo n > /tmp/ph_opts
+      index_phpbench
 	  elif [[ ${sub_test} == "cassandra" ]]; then
-	    echo n > /tmp/ph_opts
+      index_cassandra
 	  elif [[ ${sub_test} == "apache" ]]; then
-	    echo $test_index >> /tmp/ph_opts
-	    echo n >> /tmp/ph_opts
+      index_apache
 	  elif [[ ${sub_test} == "apache-iotdb" ]]; then
-	    echo $test_index >> /tmp/ph_opts
-	    echo $test_index >> /tmp/ph_opts
-	    echo $test_index >> /tmp/ph_opts
-	    echo $test_index >> /tmp/ph_opts
-	    echo n >> /tmp/ph_opts
+      index_apache_iotdb
 	  elif [[ ${sub_test} == "hbase" ]]; then
-	    echo $test_index >> /tmp/ph_opts
-	    echo $test_index >> /tmp/ph_opts
-	    echo $test_index >> /tmp/ph_opts
-	    echo n >> /tmp/ph_opts
+      index_hbase
 	  else
 	    echo "Unsupported test: ${sub_test}"
       exit 1
