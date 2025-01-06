@@ -34,7 +34,6 @@ reduce_cockroach() {
             # Append the extracted information to the output file
             echo "$workload:$concurrency:$average:$deviation" >> "$tmp_file"
         fi
-        rm "$tmp_file"
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 
@@ -58,27 +57,29 @@ reduce_redis() {
             # Append the extracted information to the output file
             echo "$test:$parallel_connections:$average:$deviation" >> "$tmp_file"
         fi
-        rm "$tmp_file"
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 
 reduce_stress_ng() {
-    egrep 'Test: |Average' results_phoronix_*.out | grep -v stress > tmpfile
-    echo "Test:BOPs"
-    toggle=0
-    while IFS= read -r line
-    do
-      if [ $toggle -eq 0 ]; then
-        out=`echo $line | cut -d':' -f2 | sed "s/^ //g" | sed "s/\[1\;34m//g"`
-        printf "%s:" "$out"
-        toggle=1
-      else
-        out=`echo $line | cut -d':' -f 2 | cut -d' ' -f 2 | sed "s/\[1\;34m//g"`
-        printf "%s\n" $out
-        toggle=0
-      fi
-    done < "tmpfile"
-    rm tmpfile
+    echo "Test:Average:Deviation" > "$tmp_file"
+    # Read and process the results file
+    while IFS= read -r line; do
+        # Check for lines containing Test and CPU Stress
+        if [[ $line == *"Test:"* ]]; then
+            # Extract Test name (after "Test: " and before the colon)
+            test=$(echo "$line" | awk -F 'Test: ' '{print $2}' | awk -F ':' '{print $1}')
+        fi
+        if [[ $line == *"Average:"* ]]; then
+            # Extract Average value
+            average=$(echo "$line" | awk -F 'Average: ' '{print $2}' | awk '{print $1}')
+        fi
+        if [[ $line == *"Deviation:"* ]]; then
+            # Extract Deviation value
+            deviation=$(echo "$line" | awk -F 'Deviation: ' '{print $2}' | tr -d '%')
+            # Append the extracted information to the output file
+            echo "$test:$average:$deviation" >> "$tmp_file"
+        fi
+    done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 # Check if an argument is passed
 if [ $# -eq 0 ]; then
@@ -116,13 +117,13 @@ if [ "$tmp_file" == "none" ]; then
     usage
 fi
 
-if [[ "$test_ran" == "cockroach" ]]; then
+if [[ ${test_ran} == "cockroach" ]]; then
     reduce_cockroach
-elif [[ "$test_ran" == "redis" ]]; then
+elif [[ ${test_ran} == "redis" ]]; then
     reduce_redis
-elif [[ "$test_ran" == "stress-ng"]]; then
+elif [[ ${test_ran} == "stress-ng" ]]; then
     reduce_stress_ng
 else
-    echo "Unsupported test: $test_ran"
+    echo "Unsupported test: ${test_ran}"
     exit 1
 fi
