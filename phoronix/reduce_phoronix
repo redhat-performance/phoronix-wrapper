@@ -37,6 +37,23 @@ reduce_cockroach() {
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 
+reduce_phpbench() {
+    echo "Average:Deviation" > "$tmp_file"
+    # Read and process the results file
+    while IFS= read -r line; do
+        if [[ $line == *"Average:"* ]]; then
+            # Extract Average value
+            average=$(echo "$line" | awk -F 'Average: ' '{print $2}' | awk '{print $1}')
+        fi
+        if [[ $line == *"Deviation:"* ]]; then
+            # Extract Deviation value
+            deviation=$(echo "$line" | awk -F 'Deviation: ' '{print $2}' | tr -d '%')
+            # Append the extracted information to the output file
+            echo "$average:$deviation" >> "$tmp_file"
+        fi
+    done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
+}
+
 reduce_redis() {
     echo "Test:ParallelConnections:Average:Deviation" > "$tmp_file"
     # Read and process the results file
@@ -60,11 +77,75 @@ reduce_redis() {
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 
+reduce_cassandra() {
+    echo "Test:Average:Deviation" > "$tmp_file"
+    # Read and process the results file
+    while IFS= read -r line; do
+        # Check for lines containing Test
+        if [[ $line == *"Test:"* ]]; then
+            # Extract Test name (after "Test: " and before the colon)
+            test=$(echo "$line" | awk -F 'Test: ' '{print $2}' | awk -F ':' '{print $1}')
+        fi
+        if [[ $line == *"Average:"* ]]; then
+            # Extract Average value
+            average=$(echo "$line" | awk -F 'Average: ' '{print $2}' | awk '{print $1}')
+        fi
+        if [[ $line == *"Deviation:"* ]]; then
+            # Extract Deviation value
+            deviation=$(echo "$line" | awk -F 'Deviation: ' '{print $2}' | tr -d '%')
+            # Append the extracted information to the output file
+            echo "$test:$average:$deviation" >> "$tmp_file"
+        fi
+    done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
+}
+
+reduce_apache-iotdb() {
+    # Header for CSV file
+    echo "device_count:batch_size:sensor_count:client_number:point_sec:latency" > "$tmp_file"
+
+    # Initialize variables to store values for each test configuration
+    device_count=""
+    batch_size=""
+    sensor_count=""
+    client_number=""
+    point_sec=""
+    latency=""
+    # Iterate through the test output file (replace this with the actual test output file)
+    while IFS= read -r line; do
+        # Extract the configuration line (e.g., Device Count: 100 - Batch Size Per Write: 1 - Sensor Count: 200 - Client Number: 100)
+        if [[ "$line" =~ \[\Device\ Count:\ ([0-9]+).*Batch\ Size\ Per\ Write:\ ([0-9]+).*Sensor\ Count:\ ([0-9]+).*Client\ Number:\ ([0-9]+)] ]]; then
+            # Save the configuration
+            device_count="${BASH_REMATCH[1]}"
+            batch_size="${BASH_REMATCH[2]}"
+            sensor_count="${BASH_REMATCH[3]}"
+            client_number="${BASH_REMATCH[4]}"
+        fi
+        # Extract points/sec (e.g., Average: 139645 point/sec)
+        if [[ "$line" =~ Average:\ ([0-9]+)\ point/sec ]]; then
+            point_sec="${BASH_REMATCH[1]}"
+        fi
+        # Extract latency (e.g., Average Latency: 117.59)
+        if [[ "$line" =~ Average\ Latency:\ ([0-9]+\.[0-9]+) ]]; then
+            latency="${BASH_REMATCH[1]}"
+        fi
+        # After reading the point_sec and latency for a test configuration, append it to the output CSV
+        if [[ -n "$device_count" && -n "$batch_size" && -n "$sensor_count" && -n "$client_number" ]]; then
+            echo "$device_count:$batch_size:$sensor_count:$client_number:${point_sec:-}:$latency" >> "$tmp_file"
+            device_count=""
+            batch_size=""
+            sensor_count=""
+            client_number=""
+            point_sec=""
+            latency=""
+        fi
+    done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
+}
+
 reduce_stress_ng() {
     echo "Test:Average:Deviation" > "$tmp_file"
     # Read and process the results file
     while IFS= read -r line; do
-        # Check for lines containing Test and CPU Stress
+        # Check for lines containing Test
         if [[ $line == *"Test:"* ]]; then
             # Extract Test name (after "Test: " and before the colon)
             test=$(echo "$line" | awk -F 'Test: ' '{print $2}' | awk -F ':' '{print $1}')
@@ -123,6 +204,12 @@ elif [[ ${test_ran} == "redis" ]]; then
     reduce_redis
 elif [[ ${test_ran} == "stress-ng" ]]; then
     reduce_stress_ng
+elif [[ ${test_ran} == "phpbench" ]]; then
+    reduce_phpbench
+elif [[ ${test_ran} == "cassandra" ]]; then
+    reduce_cassandra
+elif [[ ${test_ran} == "apache-iotdb" ]]; then
+    reduce_apache-iotdb
 else
     echo "Unsupported test: ${test_ran}"
     exit 1

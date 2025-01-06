@@ -287,12 +287,8 @@ else
       index_phpbench
 	  elif [[ ${sub_test} == "cassandra" ]]; then
       index_cassandra
-	  elif [[ ${sub_test} == "apache" ]]; then
-      index_apache
 	  elif [[ ${sub_test} == "apache-iotdb" ]]; then
       index_apache_iotdb
-	  elif [[ ${sub_test} == "hbase" ]]; then
-      index_hbase
 	  else
 	    echo "Unsupported test: ${sub_test}"
       exit 1
@@ -331,8 +327,8 @@ else
 	# We place the results first in results_check.csv so we can check to make sure
 	# the tests actually ran.  After the check, we will add the run info to results.csv.
 	#
-	$run_dir/reduce_phoronix --sub_test {sub_test} --tmp_file results_{sub_test}_check.csv
-	lines=`wc -l results_{sub_test}_check.csv | cut -d' ' -f 1`
+	$run_dir/reduce_phoronix --sub_test ${sub_test} --tmp_file results_${sub_test}_check.csv
+	lines=`wc -l results_${sub_test}_check.csv | cut -d' ' -f 1`
 	if [[ $lines == "1" ]]; then
 		#
 		# We failed, report and do not remove the results_{sub_test}_check.csv file.
@@ -341,8 +337,8 @@ else
 		rtc=1
 	else
 		echo Ran >> test_results_report
-		cat results_{sub_test}_check.csv >> ${results_file}
-		rm results_{sub_test}_check.csv
+		cat results_${sub_test}_check.csv >> ${results_file}
+		rm results_${sub_test}_check.csv
 	fi
 	popd > /dev/null
 	find -L $RESULTSDIR  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
