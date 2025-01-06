@@ -235,6 +235,11 @@ index_nginx(){
   echo n >> /tmp/ph_opts
 }
 
+index_sqlite(){
+  echo $test_index > /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
 if [[ $sub_test == "none" ]]; then
 	echo You must designate a test.
 	usage $0
@@ -284,6 +289,8 @@ else
       index_apache_iotdb
     elif [[ ${sub_test} == "nginx" ]]; then
       index_nginx
+    elif [[ ${sub_test} == "sqlite" ]]; then
+      index_sqlite
 	  else
 	    echo "Unsupported test: ${sub_test}"
       exit 1

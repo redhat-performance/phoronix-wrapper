@@ -184,6 +184,27 @@ reduce_stress_ng() {
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 
+reduce_sqlite() {
+    echo "Threads:Average:Deviation" > "$tmp_file"
+    # Read and process the results file
+    while IFS= read -r line; do
+        # Check for lines containing Threads
+        if [[ $line == *"Threads / Copies:"* ]]; then
+            # Extract Test name (after "Test: " and before the colon)
+            test=$(echo "$line" | awk -F 'Threads / Copies: ' '{print $2}' | awk -F ':' '{print $1}')
+        fi
+        if [[ $line == *"Average:"* ]]; then
+            # Extract Average value
+            average=$(echo "$line" | awk -F 'Average: ' '{print $2}' | awk '{print $1}')
+        fi
+        if [[ $line == *"Deviation:"* ]]; then
+            # Extract Deviation value
+            deviation=$(echo "$line" | awk -F 'Deviation: ' '{print $2}' | tr -d '%')
+            # Append the extracted information to the output file
+            echo "$threads:$average:$deviation" >> "$tmp_file"
+        fi
+    done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
+}
 
 # Check if an argument is passed
 if [ $# -eq 0 ]; then
@@ -235,6 +256,8 @@ elif [[ ${test_ran} == "apache-iotdb" ]]; then
     reduce_apache-iotdb
 elif [[ ${test_ran} == "nginx" ]]; then
     reduce_nginx
+elif [[ ${test_ran} == "sqlite" ]]; then
+    reduce_sqlite
 else
     echo "Unsupported test: ${test_ran}"
     exit 1
