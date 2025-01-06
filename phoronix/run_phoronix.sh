@@ -240,6 +240,11 @@ index_sqlite(){
   echo n >> /tmp/ph_opts
 }
 
+index_openssl(){
+  echo $test_index > /tmp/ph_opts
+  echo n >> /tmp/ph_opts
+}
+
 if [[ $sub_test == "none" ]]; then
 	echo You must designate a test.
 	usage $0
@@ -291,6 +296,8 @@ else
       index_nginx
     elif [[ ${sub_test} == "sqlite" ]]; then
       index_sqlite
+    elif [[ ${sub_test} == "openssl" ]]; then
+      index_openssl
 	  else
 	    echo "Unsupported test: ${sub_test}"
       exit 1

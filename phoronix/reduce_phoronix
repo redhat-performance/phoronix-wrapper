@@ -206,6 +206,28 @@ reduce_sqlite() {
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 
+reduce_openssl() {
+    echo "Algorithm:BPS:Deviation" > "$tmp_file"
+    # Read and process the results file
+    while IFS= read -r line; do
+        # Check for lines containing Threads
+        if [[ $line == *"Algorithm:"* ]]; then
+            # Extract Algorithm name (after "Algorithm: " and before the colon)
+            algorithm=$(echo "$line" | awk -F 'Algorithm: ' '{print $2}' | awk -F ':' '{print $1}')
+        fi
+        if [[ $line == *"Average:"* ]]; then
+            # Extract Average value
+            average=$(echo "$line" | awk -F 'Average: ' '{print $2}' | awk '{print $1}')
+        fi
+        if [[ $line == *"Deviation:"* ]]; then
+            # Extract Deviation value
+            deviation=$(echo "$line" | awk -F 'Deviation: ' '{print $2}' | tr -d '%')
+            # Append the extracted information to the output file
+            echo "$algorithm:$average:$deviation" >> "$tmp_file"
+        fi
+    done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
+}
+
 # Check if an argument is passed
 if [ $# -eq 0 ]; then
     usage
@@ -258,6 +280,8 @@ elif [[ ${test_ran} == "nginx" ]]; then
     reduce_nginx
 elif [[ ${test_ran} == "sqlite" ]]; then
     reduce_sqlite
+elif [[ ${test_ran} == "openssl" ]]; then
+    reduce_openssl
 else
     echo "Unsupported test: ${test_ran}"
     exit 1
