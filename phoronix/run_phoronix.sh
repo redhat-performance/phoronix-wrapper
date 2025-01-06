@@ -222,11 +222,6 @@ index_cassandra(){
   echo n >> /tmp/ph_opts
 }
 
-index_apache(){
-  echo $test_index > /tmp/ph_opts
-  echo n >> /tmp/ph_opts
-}
-
 index_apache_iotdb(){
   echo $test_index > /tmp/ph_opts
   echo $test_index >> /tmp/ph_opts
@@ -235,10 +230,8 @@ index_apache_iotdb(){
   echo n >> /tmp/ph_opts
 }
 
-index_hbase(){
+index_nginx(){
   echo $test_index > /tmp/ph_opts
-  echo $test_index >> /tmp/ph_opts
-  echo $test_index >> /tmp/ph_opts
   echo n >> /tmp/ph_opts
 }
 
@@ -289,6 +282,8 @@ else
       index_cassandra
 	  elif [[ ${sub_test} == "apache-iotdb" ]]; then
       index_apache_iotdb
+    elif [[ ${sub_test} == "nginx" ]]; then
+      index_nginx
 	  else
 	    echo "Unsupported test: ${sub_test}"
       exit 1

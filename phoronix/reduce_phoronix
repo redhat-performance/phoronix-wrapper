@@ -141,6 +141,27 @@ reduce_apache-iotdb() {
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
 
+reduce_nginx(){
+  echo "Connections:RPS" > "$tmp_file"
+  while IFS= read -r line; do
+        # Check for lines containing Connections
+        if [[ $line == *"Connections:"* ]]; then
+            # Extract Test name (after "Connections: " and before the colon)
+            connection=$(echo "$line" | awk -F 'Connections: ' '{print $2}' | awk -F ':' '{print $1}')
+        fi
+        if [[ $line == *"Average:"* ]]; then
+            # Extract Average value
+            average=$(echo "$line" | awk -F 'Average: ' '{print $2}' | awk '{print $1}')
+        fi
+        if [[ $line == *"Deviation:"* ]]; then
+            # Extract Deviation value
+            deviation=$(echo "$line" | awk -F 'Deviation: ' '{print $2}' | tr -d '%')
+            # Append the extracted information to the output file
+            echo "$connection:$average:$deviation" >> "$tmp_file"
+        fi
+    done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
+}
+
 reduce_stress_ng() {
     echo "Test:Average:Deviation" > "$tmp_file"
     # Read and process the results file
@@ -162,6 +183,8 @@ reduce_stress_ng() {
         fi
     done < /tmp/results_phoronix_"$test_ran"_tuned_*.out
 }
+
+
 # Check if an argument is passed
 if [ $# -eq 0 ]; then
     usage
@@ -210,6 +233,8 @@ elif [[ ${test_ran} == "cassandra" ]]; then
     reduce_cassandra
 elif [[ ${test_ran} == "apache-iotdb" ]]; then
     reduce_apache-iotdb
+elif [[ ${test_ran} == "nginx" ]]; then
+    reduce_nginx
 else
     echo "Unsupported test: ${test_ran}"
     exit 1
