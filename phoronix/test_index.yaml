@@ -1,0 +1,33 @@
+subtests:
+  openssl:
+    description: "OpenSSL"
+    options:
+      algorithm:
+        1. "RSA4096"
+        2. "SHA256"
+        3. "SHA512"
+        4. "AES-128-GCM"
+        5. "AES-256-GCM"
+        6. "ChaCha20"
+        7. "ChaCha20-Poly1305"
+        8. "Test All Options"
+      default_algorithm: "1"
+
+  cockroach:
+    description: "CockroachDB"
+    options:
+      workload:
+        1. "KV, 95% Reads"
+        2. "KV, 50% Reads"
+        3. "KV, 60% Reads"
+        4. "KV, 10% Reads"
+        5. "MoVR"
+        6. "Test All Options"
+      concurrency:
+        1. "128"
+        2. "256"
+        3. "512"
+        4. "1024"
+        5. "Test_All_Options"
+      default_workload: "1"
+      default_concurrency: "1"

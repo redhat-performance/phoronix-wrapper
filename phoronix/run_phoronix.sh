@@ -18,7 +18,7 @@
 
 test_name="phoronix"
 GIT_VERSION="v10.8.1"
-test_index="Test All Options"
+yaml_file="test_index.yaml"
 rtc=0
 
 arguments="$@"
@@ -78,6 +78,7 @@ usage()
 	echo "  --test_index: test index to run.  Default is $test_index"
 	echo "  --sub_test test running: Test we are to run. Supported tests are"
 	echo "    cockroach, cassandra, couchdb and hbase"
+	echo "  --test_option_override <parameterA=value1,value2>|<parameterB=value1>"
 	echo "  --tools_git: Location to pick up the required tools git, default"
 	echo "    https://github.com/redhat-performance/test_tools-wrappers"
 	echo "  --usage: this usage message"
@@ -143,8 +144,9 @@ ${curdir}/test_tools/gather_data ${curdir}
 source test_tools/general_setup "$@"
 
 ARGUMENT_LIST=(
-	"test_index"
-	"sub_test"
+        "test_index"
+        "sub_test"
+        "test_option_override"
 )
 
 NO_ARGUMENTS=(
@@ -170,84 +172,95 @@ fi
 eval set --$opts
 
 while [[ $# -gt 0 ]]; do
-        case "$1" in
-		--test_index)
-			test_index=$2
-			shift 2
-		;;
+    case "$1" in
+    --test_index)
+      test_index=$2
+      shift 2
+    ;;
     --sub_test)
       sub_test=${2}
       shift 2
     ;;
+    --test_option_override)
+      test_option_override=$2
+      shift 2
+    ;;
     -h)
-			usage
-		;;
-	  --usage)
-			usage
+      usage
+    ;;
+    --usage)
+      usage
       exit
     ;;
-		--)
-			break;
-		;;
-		*)
-			echo option not found $1
-			usage
-			exit
-		;;
-        esac
+    --)
+      break;
+    ;;
+    *)
+      echo option not found $1
+      usage
+      exit
+    ;;
+    esac
 done
 
-index_cockroach(){
-  echo $test_index > /tmp/ph_opts
-  echo $test_index >> /tmp/ph_opts
-  echo n >> /tmp/ph_opts
+parse_yaml() {
+    local yaml_file=$1
+    local subtest=$2
+    local option=$3
+
+    # Use yq to extract the value from the YAML file
+    yq eval ".subtests.$subtest.options.$option" "$yaml_file"
 }
 
-index_redis(){
-  echo $test_index > /tmp/ph_opts
-  echo $test_index >> /tmp/ph_opts
-  echo n >> /tmp/ph_opts
-}
+generate_ph_opts() {
 
-index_stress_ng(){
-  echo $test_index > /tmp/ph_opts
-  echo n >> /tmp/ph_opts
-}
+    local subtest=$1
+    local override_options=$2
 
-index_phpbench(){
-  echo n >> /tmp/ph_opts
-}
+    declare -A options
 
-index_cassandra(){
-  echo n >> /tmp/ph_opts
-}
+    # ParoIe the YAML file to get the default options
+    local default_keys=$(yq eval ".subtests.$subtest.options | keys | .[] | select(test(\"^default_\"))" "$yaml_file")
+    mapfile -t ordered_keys <<< "$default_keys"
 
-index_apache_iotdb(){
-  echo $test_index > /tmp/ph_opts
-  echo $test_index >> /tmp/ph_opts
-  echo $test_index >> /tmp/ph_opts
-  echo $test_index >> /tmp/ph_opts
-  echo n >> /tmp/ph_opts
-}
+    # Parse default options and store in options associative array
+    for key in "${ordered_keys[@]}"; do
+        # Extract parameter name by removing 'default_' prefix
+        local param=${key#default_}
+        # Get the default value from YAML
+        options[$param]=$(parse_yaml "$yaml_file" "$subtest" "$key")
+    done
 
-index_nginx(){
-  echo $test_index > /tmp/ph_opts
-  echo n >> /tmp/ph_opts
-}
+    #empty the file
+    > /tmp/ph_opts
 
-index_sqlite(){
-  echo $test_index > /tmp/ph_opts
-  echo n >> /tmp/ph_opts
-}
+   # Process overrides, if any
+    if [[ -n "$override_options" ]]; then
+        IFS='|' read -r -a overrides <<< "$override_options"
+        for override in "${overrides[@]}"; do
+            echo ${override}
+            IFS='=' read -r key values <<< "$override"
+            if [[ -n "${options[$key]}" ]]; then
+                options[$key]=$values
+            else
+                echo "Unknown option: $key"
+                exit 1
+            fi
+        done
+    fi
 
-index_openssl(){
-  echo $test_index > /tmp/ph_opts
-  echo n >> /tmp/ph_opts
+    #Add in correct order
+    for key in "${ordered_keys[@]}"; do
+        param=${key#default_}
+        echo "${options[$param]}" >> /tmp/ph_opts
+    done
+
+    echo "n" >> /tmp/ph_opts
 }
 
 if [[ $sub_test == "none" ]]; then
-	echo You must designate a test.
-	usage $0
+        echo You must designate a test.
+        usage $0
 fi
 
 if [ $to_pbench -eq 1 ]; then
@@ -265,59 +278,36 @@ if [ $to_pbench -eq 1 ]; then
 	fi
 	exit
 else
-	if [ $to_user == "ubuntu" ]; then
-		DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-cli
-		DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-xml
-	fi
-	cd $run_dir
-	#
-	# phoronix run parameters.
-	#
-	# Right now we only support stress-ng
-	#
-	if [ ! -d "./phoronix-test-suite" ]; then
-		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
-	fi
-	echo 1 | ./phoronix-test-suite/phoronix-test-suite install ${sub_test}
+        if [ $to_user == "ubuntu" ]; then
+                DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-cli
+                DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-xml
+        fi
+        cd $run_dir
+        #
+        # phoronix run parameters.
+        #
+        # Right now we only support stress-ng
+        #
+        if [ ! -d "./phoronix-test-suite" ]; then
+                git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
+        fi
+        echo 1 | ./phoronix-test-suite/phoronix-test-suite install ${sub_test}
+        #
+        # Run phoronix test
+        #
+        if [[ -f /tmp/results_${test_name}_${sub_test}_${to_tuned_setting}.out ]]; then
+                rm /tmp/results_${test_name}_${sub_test}_${to_tuned_setting}.out
+        fi
 
-	  if [[ ${sub_test} == "cockroach" ]]; then
-      index_cockroach
-	  elif [[ ${sub_test} == "redis" ]]; then
-      index_redis
-	  elif [[ ${sub_test} == "stress-ng" ]]; then
-      index_stress_ng
-	  elif [[ ${sub_test} == "phpbench" ]]; then
-      index_phpbench
-	  elif [[ ${sub_test} == "cassandra" ]]; then
-      index_cassandra
-	  elif [[ ${sub_test} == "apache-iotdb" ]]; then
-      index_apache_iotdb
-    elif [[ ${sub_test} == "nginx" ]]; then
-      index_nginx
-    elif [[ ${sub_test} == "sqlite" ]]; then
-      index_sqlite
-    elif [[ ${sub_test} == "openssl" ]]; then
-      index_openssl
-	  else
-	    echo "Unsupported test: ${sub_test}"
-      exit 1
-		fi
-
-
-	#
-	# Run phoronix test
-	#
-	if [[ -f /tmp/results_${test_name}_${sub_test}_${to_tuned_setting}.out ]]; then
-		rm /tmp/results_${test_name}_${sub_test}_${to_tuned_setting}.out
-	fi
-	for iterations  in 1 `seq 2 1 ${to_times_to_run}`
-	do
-		./phoronix-test-suite/phoronix-test-suite run ${sub_test} < /tmp/ph_opts  >> /tmp/results_${test_name}_${sub_test}_${to_tuned_setting}.out
-	done
-	#
-	# Archive up the results.
-	#
-	results_file=results_phoronix_${sub_test}.csv
+        generate_ph_opts ${sub_test} ${test_option_override}
+        for iterations  in 1 `seq 2 1 ${to_times_to_run}`
+        do
+            ./phoronix-test-suite/phoronix-test-suite run ${sub_test} < /tmp/ph_opts  >> /tmp/results_${test_name}_${sub_test}_${to_tuned_setting}.out
+        done
+        #
+        # Archive up the results.
+        #
+        results_file=results_phoronix_${sub_test}.csv
 
 	cd /tmp
 	RESULTSDIR=results_${test_name}_${sub_test}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
