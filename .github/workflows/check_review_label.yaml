@@ -1,0 +1,14 @@
+name: Check for Group Review label
+
+on:
+  pull_request:
+    types:
+      - opened
+      - labeled
+
+env:
+  TARGET_LABEL: "group_review_lgtm"
+
+jobs:
+  check_review_label:
+    uses: redhat-performance/zathras/.github/workflows/check_review_label.yaml@main
