@@ -1,0 +1,64 @@
+# Test general meta start
+# Test: phoronix
+# Results version: v10.8.1
+# Host: m5.xlarge
+# Sys environ: aws
+# Tuned: virtual-guest
+# OS: 5.14.0-503.11.1.el9_5.x86_64
+# Numa nodes: 1
+# CPU family: Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz
+# Number cpus: 4
+# Memory: 15903208kB
+# Test general meta end
+Test:BOPs
+Hash:333238.85
+MMAP:24.96
+NUMA:35.54
+Pipe:1071163.06
+Poll:194635.16
+Zlib:112.68
+Futex:269474.69
+MEMFD:49.78
+Mutex:321304.64
+Atomic:232.85
+Crypto:2618.70
+Malloc:8729970.31
+Cloning:1166.15
+Forking:11126.02
+Pthread:28247.10
+AVL Tree:31.54
+SENDFILE:24641.67
+CPU Cache:502374.53
+CPU Stress:3862.37
+Power Math:4249.62
+Semaphores:2176520.13
+Matrix Math:9078.63
+Vector Math:6377.64
+AVX-512 VNNI:124476.01
+Integer Math:62059.39
+Function Call:967.89
+x86_64 RdRand:119856.62
+Floating Point:330.18
+Matrix 3D Math:1084.86
+Memory Copying:427.83
+Vector Shuffle:1176.19
+Mixed Scheduler:1702.46
+Socket Activity:1323.37
+Exponential Math:7947.99
+Jpeg Compression:1274.64
+Logarithmic Math:12032.70
+Wide Vector Math:82193.34
+Context Switching:627169.68
+Fractal Generator:12.23
+Radix String Sort:62.42
+Fused Multiply-Add:1234811.26
+Trigonometric Math:4310.85
+Bitonic Integer Sort:15.71
+Vector Floating Point:3508.17
+Bessel Math Operations:1158.83
+Integer Bit Operations:239051.98
+Glibc C String Functions:1356427.40
+Glibc Qsort Data Sorting:33.48
+System V Message Passing:1011760.45
+POSIX Regular Expressions:7972.80
+Hyperbolic Trigonometric Math:7552.90

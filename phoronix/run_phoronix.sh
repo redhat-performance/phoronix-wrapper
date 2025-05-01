@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 test_index="Test All Options"
+#test_index=2
 rtc=0
 
 arguments="$@"
@@ -35,7 +36,7 @@ usage()
 	echo "  --tools_git: Location to pick up the required tools git, default"
 	echo "    https://github.com/redhat-performance/test_tools-wrappers"
 	echo "  --usage: this usage message"
-	source test_tools/general_setup --usage
+	source ${curdir}/test_tools/general_setup --usage
 }
 
 curdir=`pwd`
@@ -106,8 +107,8 @@ done
 # Check to see if the test tools directory exists.  If it does, we do not need to
 # clone the repo.
 #
-if [ ! -d "test_tools" ]; then
-        git clone $tools_git test_tools
+if [ ! -d "${curdir}/test_tools" ]; then
+        git clone $tools_git ${curdir}/test_tools
         if [ $? -ne 0 ]; then
                 error_out "Error pulling git $tools_git" 1
         fi
@@ -134,8 +135,10 @@ fi
 # to_tuned_setting: tuned setting
 #
 
+pushd ${curdir} > /dev/null
 ${curdir}/test_tools/gather_data ${curdir}
-source test_tools/general_setup "$@"
+source ${curdir}/test_tools/general_setup "$@"
+popd > /dev/null
 
 ARGUMENT_LIST=(
 	"test_index"
@@ -228,6 +231,7 @@ else
 	fi
 	for iterations  in 1 `seq 2 1 ${to_times_to_run}`
 	do
+		echo runnig  > /tmp/dave_csv
 		./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
 	done
 	#
@@ -236,15 +240,15 @@ else
 	cd /tmp
 	RESULTSDIR=results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
 	mkdir -p ${RESULTSDIR}/${test_name}_results/results_phoronix
-	if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
-		rm results_${test_name}_${to_tuned_setting}
-	fi
+	rm -f results_${test_name}_${to_tuned_setting}
 	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
+	echo saving csv >> /tmp/dave_csv
+	pwd >> /tmp/dave_csv
 	$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
 	#
 	# We place the results first in results_check.csv so we can check to make sure
@@ -259,13 +263,16 @@ else
 		echo Failed >> test_results_report
 		rtc=1
 	else
+		echo valid >> /tmp/dave_csv
+		cat results_check.csv >> /tmp/dave_csv
 		echo Ran >> test_results_report
 		cat results_check.csv >> results.csv
 		rm results_check.csv
 	fi
 	popd > /dev/null
 	find -L $RESULTSDIR  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
+	pwd >> /tmp/dave_csv
+	echo ${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $GIT_VERSION --user $to_user >> /tmp/dave_csv
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
-
 fi
 exit $rtc

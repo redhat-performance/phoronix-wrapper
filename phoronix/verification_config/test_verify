@@ -1,0 +1,3 @@
+Required_Systems: intel,amd,arm
+Via_Zathras: No
+test:--iterations 1:base_test_results/test1/verify

@@ -1,0 +1,52 @@
+Test:BOPs$
+Hash:[0-9.]{1,}$
+MMAP:[0-9.]{1,}$
+NUMA:[0-9.]{1,}$
+Pipe:[0-9.]{1,}$
+Poll:[0-9.]{1,}$
+Zlib:[0-9.]{1,}$
+Futex:[0-9.]{1,}$
+MEMFD:[0-9.]{1,}$
+Mutex:[0-9.]{1,}$
+Atomic:[0-9.]{1,}$
+Crypto:[0-9.]{1,}$
+Malloc:[0-9.]{1,}$
+Cloning:[0-9.]{1,}$
+Forking:[0-9.]{1,}$
+Pthread:[0-9.]{1,}$
+AVL Tree:[0-9.]{1,}$
+SENDFILE:[0-9.]{1,}$
+CPU Cache:[0-9.]{1,}$
+CPU Stress:[0-9.]{1,}$
+Power Math:[0-9.]{1,}$
+Semaphores:[0-9.]{1,}$
+Matrix Math:[0-9.]{1,}$
+Vector Math:[0-9.]{1,}$
+AVX-512 VNNI:[0-9.]{1,}$
+Integer Math:[0-9.]{1,}$
+Function Call:[0-9.]{1,}$
+x86_64 RdRand:[0-9.]{1,}$
+Floating Point:[0-9.]{1,}$
+Matrix 3D Math:[0-9.]{1,}$
+Memory Copying:[0-9.]{1,}$
+Vector Shuffle:[0-9.]{1,}$
+Mixed Scheduler:[0-9.]{1,}$
+Socket Activity:[0-9.]{1,}$
+Exponential Math:[0-9.]{1,}$
+Jpeg Compression:[0-9.]{1,}$
+Logarithmic Math:[0-9.]{1,}$
+Wide Vector Math:[0-9.]{1,}$
+Context Switching:[0-9.]{1,}$
+Fractal Generator:[0-9.]{1,}$
+Radix String Sort:[0-9.]{1,}$
+Fused Multiply-Add:[0-9.]{1,}$
+Trigonometric Math:[0-9.]{1,}$
+Bitonic Integer Sort:[0-9.]{1,}$
+Vector Floating Point:[0-9.]{1,}$
+Bessel Math Operations:[0-9.]{1,}$
+Integer Bit Operations:[0-9.]{1,}$
+Glibc C String Functions:[0-9.]{1,}$
+Glibc Qsort Data Sorting:[0-9.]{1,}$
+System V Message Passing:[0-9.]{1,}$
+POSIX Regular Expressions:[0-9.]{1,}$
+Hyperbolic Trigonometric Math:[0-9.]{1,}$
