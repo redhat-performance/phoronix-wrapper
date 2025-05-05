@@ -1,0 +1,21 @@
+name: Update Parent issue
+
+on:
+  pull_request:
+    types:
+      - review_requested
+  pull_request_review:
+    types:
+      - submitted
+
+permissions:
+  issues: write
+
+env:
+  ISSUE_STATE: pr_inprogress
+  REMOVE_ISSUES: --remove-label pr_approved --remove-label pr_review --remove-label pr_inprogress
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  check_review_label:
+    uses: redhat-performance/zathras/.github/workflows/issue_tagging.yaml@main
