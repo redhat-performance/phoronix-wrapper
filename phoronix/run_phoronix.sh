@@ -35,7 +35,7 @@ usage()
 	echo "  --tools_git: Location to pick up the required tools git, default"
 	echo "    https://github.com/redhat-performance/test_tools-wrappers"
 	echo "  --usage: this usage message"
-	source test_tools/general_setup --usage
+	source ${curdir}/test_tools/general_setup --usage
 }
 
 curdir=`pwd`
@@ -59,6 +59,7 @@ else
 fi
 
 test_name="phoronix"
+results_file=results_${test_name}.csv
 GIT_VERSION="v10.8.1"
 if [ ! -f "/tmp/${test_name}.out" ]; then
 	command="${0} $@"
@@ -106,8 +107,8 @@ done
 # Check to see if the test tools directory exists.  If it does, we do not need to
 # clone the repo.
 #
-if [ ! -d "test_tools" ]; then
-        git clone $tools_git test_tools
+if [ ! -d "${curdir}/test_tools" ]; then
+        git clone $tools_git ${curdir}/test_tools
         if [ $? -ne 0 ]; then
                 error_out "Error pulling git $tools_git" 1
         fi
@@ -134,8 +135,10 @@ fi
 # to_tuned_setting: tuned setting
 #
 
+pushd ${curdir} > /dev/null
 ${curdir}/test_tools/gather_data ${curdir}
-source test_tools/general_setup "$@"
+source ${curdir}/test_tools/general_setup "$@"
+popd > /dev/null
 
 ARGUMENT_LIST=(
 	"test_index"
@@ -245,27 +248,21 @@ else
 	${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
 	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
-	$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
+	$TOOLS_BIN/test_header_info --front_matter --results_file $results_file --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
 	#
 	# We place the results first in results_check.csv so we can check to make sure
-	# the tests actually ran.  After the check, we will add the run info to results.csv.
+	# the tests actually ran.  After the check, we will add the run info to $results_file
 	#
-	$run_dir/reduce_phoronix > results_check.csv
-	lines=`wc -l results_check.csv | cut -d' ' -f 1`
-	if [[ $lines == "1" ]]; then
-		#
-		# We failed, report and do not remove the results_check.csv file.
-		#
+	$run_dir/reduce_phoronix >> $results_file
+	$TOOLS_BIN/validate_line --results_file $results_file --base_results_file $run_dir/base_test_results/test1/verify
+	if [[ $? -eq 0 ]]; then
+		echo Ran >> test_results_report
+	else
 		echo Failed >> test_results_report
 		rtc=1
-	else
-		echo Ran >> test_results_report
-		cat results_check.csv >> results.csv
-		rm results_check.csv
 	fi
 	popd > /dev/null
 	find -L $RESULTSDIR  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
-
 fi
 exit $rtc
