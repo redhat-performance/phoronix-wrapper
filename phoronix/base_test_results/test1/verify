@@ -1,4 +1,20 @@
+#
+# Main reg exp summary
+# :[1-9][0-9.]{0,}$
+#
+#   Field 1: Any match
+#   Field 2: Any non zero value
+#
+# Detailed description
+# [1-9][0-9.]{0,}$
+#   [1-9]: This matches a single digit from 1 to 9 (i.e., any non-zero digit).
+#   [0-9.]{0,}: This matches zero or more occurrences of either a digit (0-9) or a literal dot (.).
+#   $: This is an anchor that matches the end of the line.
+#
 %_header
 Test:BOPs$
+#
+# Multiple lines expected.
+#
 %_multiples
 :[1-9][0-9.]{0,}$

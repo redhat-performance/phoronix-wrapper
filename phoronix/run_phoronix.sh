@@ -242,6 +242,7 @@ else
 	if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
 		rm results_${test_name}_${to_tuned_setting}
 	fi
+	rm -f results_${test_name}_${to_tuned_setting}
 	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
@@ -255,12 +256,7 @@ else
 	#
 	$run_dir/reduce_phoronix >> $results_file
 	$TOOLS_BIN/validate_line --results_file $results_file --base_results_file $run_dir/base_test_results/test1/verify
-	if [[ $? -eq 0 ]]; then
-		echo Ran >> test_results_report
-	else
-		echo Failed >> test_results_report
-		rtc=1
-	fi
+	rtc=$?
 	popd > /dev/null
 	find -L $RESULTSDIR  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
