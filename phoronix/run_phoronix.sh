@@ -20,6 +20,7 @@ test_index="Test All Options"
 rtc=0
 
 arguments="$@"
+pcpdir=""
 
 error_out()
 {
@@ -125,7 +126,6 @@ fi
 # to_home_root: home directory
 # to_configuration: configuration information
 # to_times_to_run: number of times to run the test
-# to_run_label: Label for the run
 # to_user: User on the test system running the test
 # to_sys_type: for results info, basically aws, azure or local
 # to_sysname: name of the system
@@ -186,6 +186,7 @@ while [[ $# -gt 0 ]]; do
         esac
 done
 
+
 if [ $to_user == "ubuntu" ]; then
 	DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-cli
 	DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-xml
@@ -209,25 +210,55 @@ echo n >> /tmp/ph_opts
 if [[ -f /tmp/results_${test_name}_${to_tuned_setting}.out ]]; then
 	rm /tmp/results_${test_name}_${to_tuned_setting}.out
 fi
+
+# If we're using PCP set things up and start logging
+if [[ $to_use_pcp -eq 1 ]]; then
+	# Get PCP setup if we're using it
+	source $TOOLS_BIN/pcp/pcp_commands.inc
+	setup_pcp
+	pcp_cfg=$TOOLS_BIN/pcp/default.cfg
+	pcpdir=/tmp/pcp_`date "+%Y.%m.%d-%H.%M.%S"`
+
+	echo "Start PCP"
+	start_pcp ${pcpdir}/ ${test_name} $pcp_cfg
+fi
+
 for iterations  in 1 `seq 2 1 ${to_times_to_run}`
 do
+	# If we're using PCP, snap a chalk line at the start of the iteration
+	if [[ $to_use_pcp -eq 1 ]]; then
+		start_pcp_subset
+	fi
 	./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+	# If we're using PCP, snap the chalk line at the end of the iteration
+	# and log the iteration's result
+
+	if [[ $to_use_pcp -eq 1 ]]; then
+		echo "Send result to PCP archive"
+		result2pcp iterations ${iterations}
+		stop_pcp_subset
+	fi
 done
+# If we're using PCP, stop logging
+if [[ $to_use_pcp -eq 1 ]]; then
+	echo "Stop PCP"
+	stop_pcp
+fi
 #
 # Archive up the results.
 #
 cd /tmp
-RESULTSDIR=results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
-mkdir -p ${RESULTSDIR}/${test_name}_results/results_phoronix
+RESULTSDIR=/tmp/results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
+mkdir -p ${RESULTSDIR}/results_phoronix
 if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
 	rm results_${test_name}_${to_tuned_setting}
 fi
 ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
-cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
+cp results_${test_name}_*.out $RESULTSDIR/results_phoronix
+${curdir}/test_tools/move_data $curdir  $RESULTS_DIR/results_phoronix
+cp /tmp/results_${test_name}_${to_tuned_setting}.out $RESULTSDIR/results_phoronix
+pushd $RESULTSDIR/results_phoronix > /dev/null
 $TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
 #
 # We place the results first in results_check.csv so we can check to make sure
@@ -247,5 +278,5 @@ else
 	rm results_check.csv
 fi
 popd > /dev/null
-${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
+${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir "$RESULTSDIR ${pcpdir}" --test_name $test_name --tuned_setting $to_tuned_setting --version none --user $to_user
 exit $rtc
