@@ -18,7 +18,6 @@ Location of underlying workload: https://github.com/phoronix-test-suite/phoronix
 Packages required: gcc,graphviz,python3,lksctp-tools-devel,php-cli,php-xml,php-json,bc,perf
 
 
-The script will set the sizings based on the hardware it is being run.
 ```
   --test_index: test index to run.  Default is Test All Options
   --tools_git: Location to pick up the required tools git, default
@@ -37,5 +36,5 @@ General options
   --tuned_setting: used in naming the tar file, default for RHEL is the current active tuned.  For non
     RHEL systems, default is none.
   --usage: this usage message.
-  --use_pcp: Enables use of Performance Co-Pilot in wrappers, defaults to 0.
+  --use_pcp: Enables use of Performance Co-Pilot in wrappers, defaults to 0 (off).
 ```
