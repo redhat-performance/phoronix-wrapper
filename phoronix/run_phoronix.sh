@@ -20,6 +20,7 @@ test_index="Test All Options"
 rtc=0
 
 arguments="$@"
+pcpdir=""
 
 error_out()
 {
@@ -125,9 +126,6 @@ fi
 # to_home_root: home directory
 # to_configuration: configuration information
 # to_times_to_run: number of times to run the test
-# to_pbench: Run the test via pbench
-# to_puser: User running pbench
-# to_run_label: Label for the run
 # to_user: User on the test system running the test
 # to_sys_type: for results info, basically aws, azure or local
 # to_sysname: name of the system
@@ -189,83 +187,96 @@ while [[ $# -gt 0 ]]; do
 done
 
 
-if [ $to_pbench -eq 1 ]; then
-	source ~/.bashrc
-	move_back=0
-	move_this=`ls /var/lib/pbench-agent/tools-*-default/*/perf`
-	if [ $? -eq 0 ]; then
-		move_back=1
-		mv $move_this /tmp/perf
-	fi
-	echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test $test_name --spacing 11 --pbench_stats $to_pstats
-	$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test $test_name --spacing 11 --pbench_stats $to_pstats
-	if [ $move_back -eq 1 ]; then
-		mv /tmp/perf $move_this
-	fi
-else
-	if [ $to_user == "ubuntu" ]; then
-		DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-cli
-		DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-xml
-	fi
-	cd $run_dir
-	#
-	# phoronix run parameters.
-	#
-	# Right now we only support stress-ng
-	#
-	if [ ! -d "./phoronix-test-suite" ]; then
-		git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
-	fi
-	echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
-	echo $test_index > /tmp/ph_opts
-	echo n >> /tmp/ph_opts
-	
-	#
-	# Run phoronix test
-	#
-	if [[ -f /tmp/results_${test_name}_${to_tuned_setting}.out ]]; then
-		rm /tmp/results_${test_name}_${to_tuned_setting}.out
-	fi
-	for iterations  in 1 `seq 2 1 ${to_times_to_run}`
-	do
-		./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
-	done
-	#
-	# Archive up the results.
-	#
-	cd /tmp
-	RESULTSDIR=results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
-	mkdir -p ${RESULTSDIR}/${test_name}_results/results_phoronix
-	if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
-		rm results_${test_name}_${to_tuned_setting}
-	fi
-	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
-
-	cp results_${test_name}_*.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	${curdir}/test_tools/move_data $curdir  results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	cp /tmp/results_${test_name}_${to_tuned_setting}.out results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix
-	pushd /tmp/results_${test_name}_${to_tuned_setting}/phoronix_results/results_phoronix > /dev/null
-	$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
-	#
-	# We place the results first in results_check.csv so we can check to make sure
-	# the tests actually ran.  After the check, we will add the run info to results.csv.
-	#
-	$run_dir/reduce_phoronix > results_check.csv
-	lines=`wc -l results_check.csv | cut -d' ' -f 1`
-	if [[ $lines == "1" ]]; then
-		#
-		# We failed, report and do not remove the results_check.csv file.
-		#
-		echo Failed >> test_results_report
-		rtc=1
-	else
-		echo Ran >> test_results_report
-		cat results_check.csv >> results.csv
-		rm results_check.csv
-	fi
-	popd > /dev/null
-	find -L $RESULTSDIR  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
-	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir $RESULTSDIR --test_name $test_name --tuned_setting=$to_tuned_setting --version $coremark_version none --user $to_user
-
+if [ $to_user == "ubuntu" ]; then
+	DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-cli
+	DEBIAN_FRONTEND=noninteractive apt-get install -y -q php-xml
 fi
+cd $run_dir
+#
+# phoronix run parameters.
+#
+# Right now we only support stress-ng
+#
+if [ ! -d "./phoronix-test-suite" ]; then
+	git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
+fi
+echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
+echo $test_index > /tmp/ph_opts
+echo n >> /tmp/ph_opts
+
+#
+# Run phoronix test
+#
+if [[ -f /tmp/results_${test_name}_${to_tuned_setting}.out ]]; then
+	rm /tmp/results_${test_name}_${to_tuned_setting}.out
+fi
+
+# If we're using PCP set things up and start logging
+if [[ $to_use_pcp -eq 1 ]]; then
+	# Get PCP setup if we're using it
+	source $TOOLS_BIN/pcp/pcp_commands.inc
+	setup_pcp
+	pcp_cfg=$TOOLS_BIN/pcp/default.cfg
+	pcpdir=/tmp/pcp_`date "+%Y.%m.%d-%H.%M.%S"`
+
+	echo "Start PCP"
+	start_pcp ${pcpdir}/ ${test_name} $pcp_cfg
+fi
+
+for iterations  in 1 `seq 2 1 ${to_times_to_run}`
+do
+	# If we're using PCP, snap a chalk line at the start of the iteration
+	if [[ $to_use_pcp -eq 1 ]]; then
+		start_pcp_subset
+	fi
+	./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+	# If we're using PCP, snap the chalk line at the end of the iteration
+	# and log the iteration's result
+
+	if [[ $to_use_pcp -eq 1 ]]; then
+		echo "Send result to PCP archive"
+		result2pcp iterations ${iterations}
+		stop_pcp_subset
+	fi
+done
+# If we're using PCP, stop logging
+if [[ $to_use_pcp -eq 1 ]]; then
+	echo "Stop PCP"
+	stop_pcp
+fi
+#
+# Archive up the results.
+#
+cd /tmp
+RESULTSDIR=/tmp/results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
+mkdir -p ${RESULTSDIR}/results_phoronix
+if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
+	rm results_${test_name}_${to_tuned_setting}
+fi
+ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
+
+cp results_${test_name}_*.out $RESULTSDIR/results_phoronix
+${curdir}/test_tools/move_data $curdir  $RESULTS_DIR/results_phoronix
+cp /tmp/results_${test_name}_${to_tuned_setting}.out $RESULTSDIR/results_phoronix
+pushd $RESULTSDIR/results_phoronix > /dev/null
+$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
+#
+# We place the results first in results_check.csv so we can check to make sure
+# the tests actually ran.  After the check, we will add the run info to results.csv.
+#
+$run_dir/reduce_phoronix > results_check.csv
+lines=`wc -l results_check.csv | cut -d' ' -f 1`
+if [[ $lines == "1" ]]; then
+	#
+	# We failed, report and do not remove the results_check.csv file.
+	#
+	echo Failed >> test_results_report
+	rtc=1
+else
+	echo Ran >> test_results_report
+	cat results_check.csv >> results.csv
+	rm results_check.csv
+fi
+popd > /dev/null
+${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir "$RESULTSDIR ${pcpdir}" --test_name $test_name --tuned_setting $to_tuned_setting --version none --user $to_user
 exit $rtc

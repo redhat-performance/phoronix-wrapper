@@ -17,31 +17,24 @@ Location of underlying workload: https://github.com/phoronix-test-suite/phoronix
 
 Packages required: gcc,graphviz,python3,lksctp-tools-devel,php-cli,php-xml,php-json,bc,perf
 
-To run:
-[root@hawkeye ~]# git clone https://github.com/redhat-performance/autohpl-wrapper
-[root@hawkeye ~]# autohpl-wrapper/auto_hpl/build_run_hpl.sh
 
-The script will set the sizings based on the hardware it is being run.
 ```
-Options
   --test_index: test index to run.  Default is Test All Options
   --tools_git: Location to pick up the required tools git, default
     https://github.com/redhat-performance/test_tools-wrappers
+  --usage: this usage message
 General options
   --home_parent <value>: Our parent home directory.  If not set, defaults to current working directory.
   --host_config <value>: default is the current host name.
   --iterations <value>: Number of times to run the test, defaults to 1.
-  --pbench: use pbench-user-benchmark and place information into pbench, defaults to do not use.
-  --pbench_user <value>: user who started everything. Defaults to the current user.
-  --pbench_copy: Copy the pbench data, not move it.
-  --pbench_stats: What stats to gather. Defaults to all stats.
-  --run_label: the label to associate with the pbench run. No default setting.
+  --iteration_default <value>: Value to set iterations to, if default is not set.
+  --no_pkg_install: Test is not to use dnf/yum/apt or other such tools
   --run_user: user that is actually running the test on the test system. Defaults to user running wrapper.
   --sys_type: Type of system working with, aws, azure, hostname.  Defaults to hostname.
-  --sysname: name of the system running, used in determing config files.  Defaults to hostname.
+  --sysname: name of the system running, used in determining config files.  Defaults to hostname.
+  --test_verification <test_verify_file>: Runs the test verification.  Information is in the test_verify file in the tests github
   --tuned_setting: used in naming the tar file, default for RHEL is the current active tuned.  For non
     RHEL systems, default is none.
   --usage: this usage message.
+  --use_pcp: Enables use of Performance Co-Pilot in wrappers, defaults to 0 (off).
 ```
-
-Note: The script does not install pbench for you.  You need to do that manually.
