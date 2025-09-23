@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 test_index="Test All Options"
+test_index1="Test All Options"
 rtc=0
 
 arguments="$@"
@@ -32,6 +33,7 @@ error_out()
 usage()
 {
 	echo "Usage:"
+	echo "  --sub_test <name>: What phoronix subtest to run(stress-ng....)"
 	echo "  --test_index: test index to run.  Default is $test_index"
 	echo "  --tools_git: Location to pick up the required tools git, default"
 	echo "    https://github.com/redhat-performance/test_tools-wrappers"
@@ -136,6 +138,7 @@ ${curdir}/test_tools/gather_data ${curdir}
 source test_tools/general_setup "$@"
 
 ARGUMENT_LIST=(
+	"sub_test"
 	"test_index"
 )
 
@@ -164,6 +167,10 @@ eval set --$opts
 
 while [[ $# -gt 0 ]]; do
         case "$1" in
+		--sub_test)
+			sub_test=$2
+			shift 2
+		;;
 		--test_index)
 			test_index=$2
 			shift 2
@@ -200,8 +207,27 @@ cd $run_dir
 if [ ! -d "./phoronix-test-suite" ]; then
 	git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 fi
-echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
-echo $test_index > /tmp/ph_opts
+
+echo 1 | ./phoronix-test-suite/phoronix-test-suite install $sub_test
+#
+# phoronix-test-suite does not return an error on failure.
+#
+./phoronix-test-suite/phoronix-test-suite list-installed-tests | grep -q $sub_test
+if [[ $? -ne 0 ]]; then
+	error_out "Unable to install $sub_test" 1
+fi
+
+if [[ "$sub_test" != "cassandra" ]] && [[ $sub_test != "phpbench" ]]; then
+        echo $test_index > /tmp/ph_opts
+        if [[ "$sub_test" == "redis" ]] || [[ "$sub_test" == "cockroach" ]]; then
+                echo $test_index_1 >> /tmp/ph_opts
+        fi
+        if [[ "$sub_test" == "apache-iotdb" ]]; then
+                echo $test_index >> /tmp/ph_opts
+                echo $test_index >> /tmp/ph_opts
+                echo $test_index >> /tmp/ph_opts
+        fi
+fi
 echo n >> /tmp/ph_opts
 
 #

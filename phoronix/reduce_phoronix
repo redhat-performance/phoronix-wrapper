@@ -1,17 +1,261 @@
 #!/bin/bash
-egrep 'Test: |Average' results_phoronix_*.out | grep -v stress > tmpfile
-echo "Test:BOPs"
-toggle=0
-while IFS= read -r line
-do
-	if [ $toggle -eq 0 ]; then
-		out=`echo $line | cut -d':' -f2 | sed "s/^ //g" | sed "s/\[1\;34m//g"`
-		printf "%s:" "$out"
-		toggle=1
-	else
-		out=`echo $line | cut -d':' -f 2 | cut -d' ' -f 2 | sed "s/\[1\;34m//g"`
-		printf "%s\n" $out
-		toggle=0
-	fi
-done < "tmpfile"
-rm tmpfile
+out_file=""
+sub_test=""
+in_file=""
+
+error_out()
+{
+	echo $1
+	exit $2
+}
+
+
+reduce_line1_same_3_lines()
+{
+	header="$1"
+	field1="$2"
+	field2="$3"
+	field3="$4"
+
+	echo "Workload:Concurrency:Average:Deviation" > "$out_file"
+	while IFS= read -r line; do
+	        # Check for lines containing workload and concurrency
+        	if [[ $line == *"${field1}"* ]]; then
+            		# Extract First 2 fields
+            		val1=$(echo "$line" | awk -F ': ' '{print $2}' | awk -F ' - ' '{print $1}')
+			echo $line
+			echo $val1
+            		val2=$(echo "$line" | awk -F ': ' '{print $3}' | tr -d ':')
+        	fi
+        	if [[ $line == *"${field2}"* ]]; then
+            		val3=$(echo "$line" | awk -F ': ' '{print $2}' | awk '{print $1}')
+        	fi
+        	if [[ $line == *"${field3}"* ]]; then
+            		val4=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
+	    		echo  "$val1:$val2:$val3:$val4" | sed "s/\[1\;34m//g" >> $out_file
+        	fi
+	done < "${in_file}"
+	exit 0
+}
+
+reduce_2_fields()
+{
+	header="$1"
+	field1="$2"
+	field2="$3"
+
+	echo "$header" > $out_file
+	while IFS= read -r line; do
+		if [[ $line == *"${field1}"* ]]; then
+			# Extract Test name (after field1 and before the colon)
+			f1=$(echo "$line" | awk -F "${field1} " '{print $2}' | awk -F ':' '{print $1}')
+		fi
+		if [[ $line == *"${field2}"* ]]; then
+			# Extract field3 value
+			f2=$(echo "$line" | awk -F "${field3} " '{print $2}' | tr -d '%')
+			# Append the extracted information to the output file
+	    		echo  "$f1:$f2" | sed "s/\[1\;34m//g" >> $out_file
+		fi
+	done < "$in_file"
+	exit 0
+}
+
+reduce_3_fields()
+{
+	header="$1"
+	field1="$2"
+	field2="$3"
+	field3="$4"
+
+	echo "$header" > $out_file
+	while IFS= read -r line; do
+		if [[ $line == *"${field1}"* ]]; then
+			# Extract Test name (after field1 and before the colon)
+			f1=$(echo "$line" | awk -F "${field1} " '{print $2}' | awk -F ':' '{print $1}')
+		fi
+		if [[ $line == *"${field2}"* ]]; then
+			# Extract field2 value
+			f2=$(echo "$line" | awk -F "${field2} " '{print $2}' | awk '{print $1}')
+		fi
+		if [[ $line == *"${field3}"* ]]; then
+			# Extract field3 value
+			f3=$(echo "$line" | awk -F "${field3} " '{print $2}' | tr -d '%')
+			# Append the extracted information to the output file
+	    		echo  "$f1:$f2:$f3" | sed "s/\[1\;34m//g" >> $out_file
+		fi
+	done < "$in_file"
+	exit 0
+}
+
+reduce_apache-iotdb()
+{
+	# Header for CSV file
+	echo "device_count:batch_size:sensor_count:client_number:point_sec:latency" > "$out_file"
+
+	# Initialize variables to store values for each test configuration
+	device_count=""
+	batch_size=""
+	sensor_count=""
+	client_number=""
+	point_sec=""
+	latency=""
+	# Iterate through the test output file (replace this with the actual test output file)
+	while IFS= read -r line; do
+		# Extract the configuration line (e.g., Device Count: 100 - Batch Size Per Write: 1 - Sensor Count: 200 - Client Number: 100)
+		if [[ "$line" =~ \[\Device\ Count:\ ([0-9]+).*Batch\ Size\ Per\ Write:\ ([0-9]+).*Sensor\ Count:\ ([0-9]+).*Client\ Number:\ ([0-9]+)] ]]; then
+			# Save the configuration
+			device_count="${BASH_REMATCH[1]}"
+			batch_size="${BASH_REMATCH[2]}"
+			sensor_count="${BASH_REMATCH[3]}"
+			client_number="${BASH_REMATCH[4]}"
+		fi
+		# Extract points/sec (e.g., Average: 139645 point/sec)
+		if [[ "$line" =~ Average:\ ([0-9]+)\ point/sec ]]; then
+			point_sec="${BASH_REMATCH[1]}"
+		fi
+		# Extract latency (e.g., Average Latency: 117.59)
+		if [[ "$line" =~ Average\ Latency:\ ([0-9]+\.[0-9]+) ]]; then
+			latency="${BASH_REMATCH[1]}"
+		fi
+		# After reading the point_sec and latency for a test configuration, append it to the output CSV
+		if [[ -n "$device_count" && -n "$batch_size" && -n "$sensor_count" && -n "$client_number" ]]; then
+			echo "$device_count:$batch_size:$sensor_count:$client_number:${point_sec:-}:$latency" >> "$out_file"
+			device_count=""
+			batch_size=""
+			sensor_count=""
+			client_number=""
+			point_sec=""
+		latency=""
+		fi
+	done < "$in_file"
+	exit 0
+}
+
+reduce_phpbench()
+{
+	reduce_two_fields "Average:Deviation" "Average:" "Deviation:"
+}
+
+reduce_cassandra()
+{
+	reduce_3_fields "Test:Average:Deviation" "Test:" "Average:" "Deviation:"
+}
+
+reduce_openssl()
+{
+	reduce_3_fields "Algorithm:BPS:Deviation" "Algorithm:" "Average:" "Deviation"
+}
+
+reduce_sqlite()
+{
+	reduce_3_fields "Threads:Average:Deviation" "Threads / Copies:" "Average:" "Deviation:"
+}
+
+reduce_nginx()
+{
+	reduce_3_fields "Connections:RPS:Deviation" "Connections:" "Average:" "Deviation:"
+}
+
+reduce_stress-ng()
+{
+	reduce_3_fields "Test:Average:Deviation" "Test:" "Average:" "Deviation:"
+}
+
+reduce_cockroach()
+{
+	reduce_line1_same_3_lines "Workload:Concurrency:Average:Deviation" "Workload" "Average" "Deviation"
+}
+
+# 
+# Special case test/parallel conections are on the same line
+#
+reduce_redis()
+{
+	reduce_line1_same_3_lines "Test:ParallelConnections:Average:Deviation" "Test:" "Average:" "Deviation:"
+}
+
+usage()
+{
+    echo "Usage:"
+    echo "  ./reduce_phoronix --sub_test <test_ran> --out_file <output_file> --in_file <input file>"
+    echo "Options:"
+    echo "  --in_file  Specify inp file"
+    echo "  --out_file  Specify output file"
+    echo "  --sub_test  Specify the test data to reduce"
+    echo "  -h, --usage          Show help"
+    exit 1
+}
+
+ARGUMENT_LIST=(
+	"in_file"
+	"out_file"
+	"sub_test"
+)
+
+NO_ARGUMENTS=(
+        "usage"
+)
+
+
+# read arguments
+opts=$(getopt \
+    --longoptions "$(printf "%s:," "${ARGUMENT_LIST[@]}")" \
+    --longoptions "$(printf "%s," "${NO_ARGUMENTS[@]}")" \
+    --name "$(basename "$0")" \
+    --options "h" \
+    -- "$@"
+)
+
+# Report any errors
+#
+if [ $? -ne 0 ]; then
+	error_out "Error with option parsing" 1
+        exit
+fi
+
+eval set --$opts
+
+while [[ $# -gt 0 ]]; do
+        case "$1" in
+		--in_file)
+			in_file=$2
+			shift 2
+		;;
+		--out_file)
+			out_file=$2
+			shift 2
+		;;
+		--sub_test)
+			sub_test=$2
+			shift 2
+		;;
+                -h)
+			usage
+		;;
+	        --usage)
+			usage
+                        exit
+                ;;
+		--)
+			break;
+		;;
+		*)
+			echo option not found $1
+			usage
+			exit
+		;;
+        esac
+done
+if [[ $sub_test == "" ]]; then
+	error_out "Need to designate a sub test" 1
+fi
+if [[ $out_file == "" ]]; then
+	error_out "Need to designate an output file" 1
+fi
+if [[ $in_file == "" ]]; then
+	error_out "Need to designate an in file." 1
+fi
+
+reduce="reduce_${sub_test}"
+$reduce
+error_out "$sub_test is not recognized for reduction" 1
