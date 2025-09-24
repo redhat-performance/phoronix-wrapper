@@ -290,8 +290,6 @@ $TOOLS_BIN/test_header_info --front_matter --results_file results_${sub_test}.cs
 # We place the results first in results_check.csv so we can check to make sure
 # the tests actually ran.  After the check, we will add the run info to results_${sub_test}.csv.
 #
-pwd >> /tmp/dave
-echo $run_dir/reduce_phoronix --sub_test $sub_test --out_file results_check.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}.out >> /tmp/dave
 $run_dir/reduce_phoronix --sub_test $sub_test --out_file results_${sub_test}.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}.out
 popd > /dev/null
 ${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir "$RESULTSDIR ${pcpdir}" --test_name $test_name --tuned_setting $to_tuned_setting --version none --user $to_user

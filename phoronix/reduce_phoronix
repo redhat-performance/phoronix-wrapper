@@ -17,7 +17,11 @@ reduce_line1_same_3_lines()
 	field2="$3"
 	field3="$4"
 
-	echo "Workload:Concurrency:Average:Deviation" > "$out_file"
+	#
+	# Out file is expected to contain the meta_data already, done in
+	# run_phoronix.sh.
+	#
+	echo "Workload:Concurrency:Average:Deviation" >> "$out_file"
 	while IFS= read -r line; do
 	        # Check for lines containing workload and concurrency
         	if [[ $line == *"${field1}"* ]]; then
@@ -44,7 +48,7 @@ reduce_2_fields()
 	field1="$2"
 	field2="$3"
 
-	echo "$header" > $out_file
+	echo "$header" >> $out_file
 	while IFS= read -r line; do
 		if [[ $line == *"${field1}"* ]]; then
 			# Extract Test name (after field1 and before the colon)
@@ -67,7 +71,7 @@ reduce_3_fields()
 	field2="$3"
 	field3="$4"
 
-	echo "$header" > $out_file
+	echo "$header" >> $out_file
 	while IFS= read -r line; do
 		if [[ $line == *"${field1}"* ]]; then
 			# Extract Test name (after field1 and before the colon)
@@ -90,7 +94,7 @@ reduce_3_fields()
 reduce_apache-iotdb()
 {
 	# Header for CSV file
-	echo "device_count:batch_size:sensor_count:client_number:point_sec:latency" > "$out_file"
+	echo "device_count:batch_size:sensor_count:client_number:point_sec:latency" >> "$out_file"
 
 	# Initialize variables to store values for each test configuration
 	device_count=""
