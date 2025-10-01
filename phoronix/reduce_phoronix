@@ -1,4 +1,11 @@
 #!/bin/bash
+
+#
+# Each phoronix test will produce a different results file.  Some of those
+# results files follow a given pattern, others do not.  For those that follow
+# a given pattern there may exist an existing function to reduce it.  Others
+# are unique enough that they will require their own function.
+#
 out_file=""
 sub_test=""
 in_file=""
@@ -9,6 +16,31 @@ error_out()
 	exit $2
 }
 
+
+#
+# reduce_line1_same_3_lines()
+#
+# In the line that matches Field 1 we want the entries for field 2 and 3 (fields as
+# defined by awk)
+# After that we will locate the line that matches $3, and pull the value
+# Match on $4 and pull the value.
+#
+# call for cockroach
+#  reduce_line1_same_3_lines "Workload:Concurrency:Average:Deviation" "Workload" "Average" "Deviation"
+# 
+# Sample output, cockroach
+#    Workload: KV, 95% Reads - Concurrency: 1024:
+#        8302.9
+#        8277.6
+#        8339.5
+#
+#    Average: 8306.7 ops/s
+#    Deviation: 0.37%
+#
+# So we will pull 95% and 1024  from Workload level.
+# For average we will pull 8306.7
+# For deviation we will pull 0.37%
+#
 
 reduce_line1_same_3_lines()
 {
@@ -21,7 +53,7 @@ reduce_line1_same_3_lines()
 	# Out file is expected to contain the meta_data already, done in
 	# run_phoronix.sh.
 	#
-	echo "Workload:Concurrency:Average:Deviation" >> "$out_file"
+	echo $header >> "$out_file"
 	while IFS= read -r line; do
 	        # Check for lines containing workload and concurrency
         	if [[ $line == *"${field1}"* ]]; then
@@ -41,6 +73,30 @@ reduce_line1_same_3_lines()
 	done < "${in_file}"
 	exit 0
 }
+
+#
+# reduce_2_fields
+#
+# For results that have two lines of information interested in.
+#
+# Field 1: Is the csv header to provide
+# Field 2: String of field looking for.
+# Field 3: String of field looking for.
+#
+# Example php benchmark results
+#
+#    PHP Benchmark Suite:
+#        523106
+#        522353
+#        522709
+#  
+#    Average: ^[[1;34m522723 Score^[[0m
+#    Deviation: 0.07%
+#
+# We are intersted in Average and deviation
+# The call would be
+#   reduce_2_fields "Average:Deviation" "Average:" "Deviation:"
+#
 
 reduce_2_fields()
 {
@@ -64,6 +120,27 @@ reduce_2_fields()
 	exit 0
 }
 
+#
+# reduce_3_fields(
+#  This function is used to reduce results from test that generates 3 fields to each line.
+#
+#  $1: Is the header of the csv file
+#
+#  $2 through $4 are names of the fields looking for.
+#  For example, output of a test from stress-ng
+#  
+#    Test: Memory Copying:
+#        459.34
+#        457.84
+#        460.67
+#
+#    Average: 459.28 Bogo Ops/s
+#    Deviation: 0.31%
+#
+#    field2 would be Test:
+#    field3 would be Average:
+#    field4 would be Deviation.
+#
 reduce_3_fields()
 {
 	header="$1"
@@ -91,6 +168,9 @@ reduce_3_fields()
 	exit 0
 }
 
+#
+# Results are unique enough for apache-iotb to require its own reduce function.
+#
 reduce_apache-iotdb()
 {
 	# Header for CSV file
@@ -137,7 +217,7 @@ reduce_apache-iotdb()
 
 reduce_phpbench()
 {
-	reduce_two_fields "Average:Deviation" "Average:" "Deviation:"
+	reduce_2_fields "Average:Deviation" "Average:" "Deviation:"
 }
 
 reduce_cassandra()
