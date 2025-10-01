@@ -255,6 +255,7 @@ do
 		start_pcp_subset
 	fi
 	./phoronix-test-suite/phoronix-test-suite run $sub_test < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+	rm /tmp/ph_opts
 	# If we're using PCP, snap the chalk line at the end of the iteration
 	# and log the iteration's result
 
