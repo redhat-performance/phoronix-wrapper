@@ -260,6 +260,7 @@ if [[ $in_file == "" ]]; then
 	error_out "Need to designate an in file." 1
 fi
 
+echo "# Subtest: $sub_test" >> $out_file
 reduce="reduce_${sub_test}"
 $reduce
 error_out "$sub_test is not recognized for reduction" 1
