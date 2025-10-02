@@ -1,10 +1,16 @@
 #!/bin/bash
 
 #
-# Each phoronix test will produce a different results file.  Some of those
-# results files follow a given pattern, others do not.  For those that follow
-# a given pattern there may exist an existing function to reduce it.  Others
-# are unique enough that they will require their own function.
+# Each phoronix test will produce a different results file.  Some of those results files
+# follow a given pattern, others do not.  For those that follow a given pattern there may
+# exist an existing function to reduce it.  Others are unique enough that they will require
+# otheir own function.
+#
+# Current generic reduction functions
+#   reduce_line1_same_3_lines
+#   reduce_2_fields
+#   reduce_3_fields
+#
 #
 out_file=""
 sub_test=""
@@ -20,10 +26,18 @@ error_out()
 #
 # reduce_line1_same_3_lines()
 #
-# In the line that matches Field 1 we want the entries for field 2 and 3 (fields as
-# defined by awk)
-# After that we will locate the line that matches $3, and pull the value
-# Match on $4 and pull the value.
+# To effectively process the data, we will follow a multi-step procedure involving pattern matching and data extraction.
+#
+# First, we will identify the line within the file that precisely matches the criteria defined by $1." Once this
+# specific line is located, we will extract the corresponding entries for "Field 2" and "Field 3." These
+# fields are to be interpreted as distinct data segments, as they would be defined and parsed by the awk utility. 
+#
+# Following this initial extraction, the next step involves a continued search within the file. We will then locate
+# the line that satisfies the condition matching the value of "$3." Upon identification of this line, the associated value
+# from that particular entry will be retrieved.
+#
+# Finally, the process will conclude by matching on the value of "$4." Once this specific pattern is found, the relevant
+# value corresponding to that match will be extracted, completing our data processing sequence.
 #
 # call for cockroach
 #  reduce_line1_same_3_lines "Workload:Concurrency:Average:Deviation" "Workload" "Average" "Deviation"
@@ -121,12 +135,12 @@ reduce_2_fields()
 }
 
 #
-# reduce_3_fields(
-#  This function is used to reduce results from test that generates 3 fields to each line.
+# reduce_3_fields
+#  For results that have three  lines of information interested in.
 #
 #  $1: Is the header of the csv file
-#
 #  $2 through $4 are names of the fields looking for.
+#
 #  For example, output of a test from stress-ng
 #  
 #    Test: Memory Copying:
@@ -169,7 +183,7 @@ reduce_3_fields()
 }
 
 #
-# Results are unique enough for apache-iotb to require its own reduce function.
+# Reduction functions that are specific to a given workload.
 #
 reduce_apache-iotdb()
 {
@@ -340,7 +354,18 @@ if [[ $in_file == "" ]]; then
 	error_out "Need to designate an in file." 1
 fi
 
+#
+# Give the testname in the results file, so back end tools know what they are
+# dealing with.
+#
 echo "# Subtest: $sub_test" >> $out_file
+
+#
+# Avoid a cascade of a case or if statement.
+#
 reduce="reduce_${sub_test}"
 $reduce
+#
+# If we got here, the test data reduction has not been defined.
+#
 error_out "$sub_test is not recognized for reduction" 1
