@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 test_index="Test All Options"
+test_index1="Test All Options"
+sub_test="stress-ng"
 rtc=0
 
 arguments="$@"
@@ -32,6 +34,7 @@ error_out()
 usage()
 {
 	echo "Usage:"
+	echo "  --sub_test <name>: What phoronix subtest to run(stress-ng....)"
 	echo "  --test_index: test index to run.  Default is $test_index"
 	echo "  --tools_git: Location to pick up the required tools git, default"
 	echo "    https://github.com/redhat-performance/test_tools-wrappers"
@@ -136,6 +139,7 @@ ${curdir}/test_tools/gather_data ${curdir}
 source test_tools/general_setup "$@"
 
 ARGUMENT_LIST=(
+	"sub_test"
 	"test_index"
 )
 
@@ -164,6 +168,10 @@ eval set --$opts
 
 while [[ $# -gt 0 ]]; do
         case "$1" in
+		--sub_test)
+			sub_test=$2
+			shift 2
+		;;
 		--test_index)
 			test_index=$2
 			shift 2
@@ -195,13 +203,30 @@ cd $run_dir
 #
 # phoronix run parameters.
 #
-# Right now we only support stress-ng
-#
 if [ ! -d "./phoronix-test-suite" ]; then
 	git clone -b $GIT_VERSION --single-branch --depth 1 https://github.com/phoronix-test-suite/phoronix-test-suite
 fi
-echo 1 | ./phoronix-test-suite/phoronix-test-suite install stress-ng
-echo $test_index > /tmp/ph_opts
+
+echo 1 | ./phoronix-test-suite/phoronix-test-suite install $sub_test
+#
+# phoronix-test-suite does not return an error on failure.
+#
+./phoronix-test-suite/phoronix-test-suite list-installed-tests | grep -q $sub_test
+if [[ $? -ne 0 ]]; then
+	error_out "Unable to install $sub_test" 1
+fi
+
+if [[ "$sub_test" != "cassandra" ]] && [[ $sub_test != "phpbench" ]]; then
+        echo $test_index > /tmp/ph_opts
+        if [[ "$sub_test" == "redis" ]] || [[ "$sub_test" == "cockroach" ]]; then
+                echo $test_index_1 >> /tmp/ph_opts
+        fi
+        if [[ "$sub_test" == "apache-iotdb" ]]; then
+                echo $test_index >> /tmp/ph_opts
+                echo $test_index >> /tmp/ph_opts
+                echo $test_index >> /tmp/ph_opts
+        fi
+fi
 echo n >> /tmp/ph_opts
 
 #
@@ -229,7 +254,8 @@ do
 	if [[ $to_use_pcp -eq 1 ]]; then
 		start_pcp_subset
 	fi
-	./phoronix-test-suite/phoronix-test-suite run stress-ng < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+	./phoronix-test-suite/phoronix-test-suite run $sub_test < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
+	rm /tmp/ph_opts
 	# If we're using PCP, snap the chalk line at the end of the iteration
 	# and log the iteration's result
 
@@ -249,34 +275,23 @@ fi
 #
 cd /tmp
 RESULTSDIR=/tmp/results_${test_name}_${to_tuned_setting}$(date "+%Y.%m.%d-%H.%M.%S")
-mkdir -p ${RESULTSDIR}/results_phoronix
+rdir=${RESULTSDIR}/results_phoronix_${sub_test}
+mkdir -p $rdir
 if [[ -f results_${test_name}_${to_tuned_setting} ]]; then
 	rm results_${test_name}_${to_tuned_setting}
 fi
 ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
-cp results_${test_name}_*.out $RESULTSDIR/results_phoronix
-${curdir}/test_tools/move_data $curdir  $RESULTS_DIR/results_phoronix
-cp /tmp/results_${test_name}_${to_tuned_setting}.out $RESULTSDIR/results_phoronix
-pushd $RESULTSDIR/results_phoronix > /dev/null
-$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
+cp results_${test_name}_*.out $rdir
+${curdir}/test_tools/move_data $curdir  $rdir
+cp /tmp/results_${test_name}_${to_tuned_setting}.out $rdir
+pushd $rdir > /dev/null
+$TOOLS_BIN/test_header_info --front_matter --results_file results_${sub_test}.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
 #
 # We place the results first in results_check.csv so we can check to make sure
-# the tests actually ran.  After the check, we will add the run info to results.csv.
+# the tests actually ran.  After the check, we will add the run info to results_${sub_test}.csv.
 #
-$run_dir/reduce_phoronix > results_check.csv
-lines=`wc -l results_check.csv | cut -d' ' -f 1`
-if [[ $lines == "1" ]]; then
-	#
-	# We failed, report and do not remove the results_check.csv file.
-	#
-	echo Failed >> test_results_report
-	rtc=1
-else
-	echo Ran >> test_results_report
-	cat results_check.csv >> results.csv
-	rm results_check.csv
-fi
+$run_dir/reduce_phoronix --sub_test $sub_test --out_file results_${sub_test}.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}.out
 popd > /dev/null
 ${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir "$RESULTSDIR ${pcpdir}" --test_name $test_name --tuned_setting $to_tuned_setting --version none --user $to_user
 exit $rtc
