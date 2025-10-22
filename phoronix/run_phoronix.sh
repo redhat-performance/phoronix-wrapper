@@ -219,7 +219,7 @@ fi
 if [[ "$sub_test" != "cassandra" ]] && [[ $sub_test != "phpbench" ]]; then
         echo $test_index > /tmp/ph_opts
         if [[ "$sub_test" == "redis" ]] || [[ "$sub_test" == "cockroach" ]]; then
-                echo $test_index_1 >> /tmp/ph_opts
+                echo $test_index1 >> /tmp/ph_opts
         fi
         if [[ "$sub_test" == "apache-iotdb" ]]; then
                 echo $test_index >> /tmp/ph_opts
