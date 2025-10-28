@@ -1,0 +1,61 @@
+{
+    "dependencies": {
+        "amzn": [
+            "gcc",
+            "graphviz",
+            "bc",
+            "zip",
+            "unzip",
+            "php-cli",
+            "php-xml"
+        ],
+        "rhel": [
+            "gcc",
+            "graphviz",
+            "lksctp-tools-devel",
+            "php-cli",
+            "php-xml",
+            "php-json",
+            "bc",
+            "perf",
+            "zip",
+            "unzip",
+            "perl-FindBin",
+            "perl-IPC-Cmd",
+            "perl-Time-Piece",
+            "pcp-zeroconf",
+            "pcp-pmda-openmetrics",
+            "pcp-pmda-denki"
+        ],
+        "ubuntu": [
+            "zip",
+            "gcc",
+            "graphviz",
+            "python3",
+            "php-cli",
+            "php-xml",
+            "php-json",
+            "php8-zip"
+            "unzip",
+            "bc",
+            "pcp-zeroconf"
+        ],
+        "sles": [
+            "gcc",
+            "graphviz",
+            "lksctp-tools-devel",
+            "php-cli",
+            "php-xml",
+            "php-json",
+            "bc",
+            "perf",
+            "zip",
+            "unzip",
+            "pcp",
+            "pcp-conf",
+            "pcp-system-tools"
+        ],
+        "pip": [
+        ]
+    }
+}
