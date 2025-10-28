@@ -2,7 +2,7 @@
     "dependencies": {
         "amzn": [
             "gcc",
-	    "git",
+            "git",
             "graphviz",
             "bc",
             "zip",
@@ -13,7 +13,7 @@
         "rhel": [
             "gcc",
             "graphviz",
-	    "git",
+            "git",
             "lksctp-tools-devel",
             "php-cli",
             "php-xml",
@@ -31,7 +31,7 @@
         ],
         "ubuntu": [
             "zip",
-	    "git",
+            "git",
             "gcc",
             "graphviz",
             "python3",
@@ -45,7 +45,7 @@
         ],
         "sles": [
             "gcc",
-	    "git",
+            "git",
             "graphviz",
             "lksctp-tools-devel",
             "php-cli",
