@@ -138,6 +138,14 @@ fi
 ${curdir}/test_tools/gather_data ${curdir}
 source test_tools/general_setup "$@"
 
+#
+# Install required packaging.
+#
+${TOOLS_BIN}/package_tool --wrapper_config ${run_dir}/phoronix.json --no_packages $to_no_pkg_install
+if [[ $? -ne 0 ]]; then
+	error_out "package tool returned failure" 1
+fi
+
 ARGUMENT_LIST=(
 	"sub_test"
 	"test_index"
