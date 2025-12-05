@@ -38,7 +38,7 @@
             "php-cli",
             "php-xml",
             "php-json",
-            "php8.3-zip".
+            "php8.3-zip",
             "unzip",
             "bc",
             "pcp-zeroconf"
