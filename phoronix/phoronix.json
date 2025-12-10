@@ -8,7 +8,10 @@
             "zip",
             "unzip",
             "php-cli",
-            "php-xml"
+            "php-xml",
+            "perl-FindBin",
+            "perl-IPC-Cmd",
+            "perl-Time-Piece"
         ],
         "rhel": [
             "gcc",
