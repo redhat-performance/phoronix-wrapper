@@ -27,6 +27,8 @@ pcpdir=""
 error_out()
 {
 	echo $1
+	stop_pcp
+	shutdown_pcp
 	exit $2
 
 }
@@ -244,39 +246,172 @@ if [[ -f /tmp/results_${test_name}_${to_tuned_setting}.out ]]; then
 	rm /tmp/results_${test_name}_${to_tuned_setting}.out
 fi
 
+convert_metric=""
+convert_metric_name()
+{
+	convert_metric=`echo "$1" | sed "s/;/_/g" | awk '{print $1}'| sed "s/-//g"`
+}
+
+create_phoronix_openmetric()
+{
+	rm ${run_dir}/openmetrics_phoronix_reset.txt
+	while IFS= read -r line
+	do
+		convert_metric_name "$line"
+		def=`echo $line | awk '{print $2}'`
+		echo $convert_metric $def >> ${run_dir}/openmetrics_phoronix_reset.txt
+	done < "${run_dir}/openmetrics_${test_name}_${sub_test}.txt"
+}
+
 # If we're using PCP set things up and start logging
 if [[ $to_use_pcp -eq 1 ]]; then
-	# Get PCP setup if we're using it
 	source $TOOLS_BIN/pcp/pcp_commands.inc
+	# Get PCP setup if we're using it
+	rm -f /tmp/openmetrics_workload*
+	create_phoronix_openmetric
 	setup_pcp
 	pcp_cfg=$TOOLS_BIN/pcp/default.cfg
 	pcpdir=/tmp/pcp_`date "+%Y.%m.%d-%H.%M.%S"`
-
 	echo "Start PCP"
-	start_pcp ${pcpdir}/ ${test_name} $pcp_cfg
+	start_pcp ${pcpdir}/ ${test_name}_${sub_test} $pcp_cfg
 fi
+
+pcp_common()
+{
+	while IFS= read -r line
+	do
+		convert_metric_name "$line"
+		name=`echo "$line" | awk '{print $1}' | sed "s/;/ /g"`
+		#
+		# openssl has a duplicate test name in the run, RSA4096, simply picking the last one
+		# to prevent issues in data reduction.
+		#
+		value=`grep "^$name", results_${sub_test}.csv  | tail -1 | cut -d',' -f 2`
+		if [[ $value != "" ]]; then
+			results2pcp_add_value "$convert_metric:${value}"
+		fi
+	done < "${run_dir}/openmetrics_${test_name}_${sub_test}.txt"
+	results2pcp_add_value_commit
+	reset_pcp_om
+}
+
+pcp_cockroach()
+{
+	tfile=$(mktemp /tmp/phoronix.XXXXXX)
+	grep Reads results_${sub_test}.csv  > $tfile
+	while IFS= read -r line
+	do
+		concurrency=`echo $line | cut -d, -f 2`
+		average=`echo $line | cut -d, -f 3`
+		results2pcp_multiple "concurrency:${concurrency},average:${average}"
+	done < "$tfile"
+	rm $tfile
+	reset_pcp_om
+}
+
+pcp_redis()
+{
+	tfile=$(mktemp /tmp/phoronix.XXXXXX)
+	connections=`grep -v "#" results_${sub_test}.csv | grep -v "^Test," | cut -d, -f 2 | sort -un`
+	for i in $connections; do
+		grep ",${i}," results_${sub_test}.csv  > $tfile
+		results2pcp_add_value "ParallelConnections:${i}"
+		while IFS= read -r line
+		do
+			echo line $line >> /tmp/dave
+			test=`echo $line | cut -d',' -f 1`
+			value=`echo $line | cut -d',' -f 3`
+			results2pcp_add_value  "$test:$value"
+		done < "$tfile"
+		results2pcp_add_value_commit
+		reset_pcp_om
+	done
+	reset_pcp_om
+	rm $tfile
+}
+
+pcp_nginx()
+{
+	tfile=$(mktemp /tmp/phoronix.XXXXXX)
+	grep '^[0-9]' results_${sub_test}.csv  > $tfile
+	while IFS= read -r line
+	do
+		connections=`echo $line | cut -d, -f 1`
+		rps=`echo $line | cut -d, -f 2`
+		results2pcp_multiple "connections:${connections},RPS:${RPS}"
+	done < "$tfile"
+	reset_pcp_om
+	rm $tfile
+}
+
+pcp_sqlite()
+{
+	tfile=$(mktemp /tmp/phoronix.XXXXXX)
+	grep '^[0-9]' results_${sub_test}.csv  > $tfile
+	while IFS= read -r line
+	do
+		threads=`echo "$line" | cut -d, -f 1`
+		average=`echo "$line" | cut -d, -f 2`
+		results2pcp_multiple "Threads:${threads},Average:${average}"
+	done < "$tfile"
+	reset_pcp_om
+	rm $tfile
+}
+
+pcp_phpbench()
+{
+	value=`grep '^[0-9]' results_phpbench.csv | tail -1 | cut -d' ' -f 1`
+	results2pcp_multiple "average:${value}"
+	reset_pcp_om
+
+}
 
 for iterations  in 1 `seq 2 1 ${to_times_to_run}`
 do
+	echo iteration $iterations
 	# If we're using PCP, snap a chalk line at the start of the iteration
 	if [[ $to_use_pcp -eq 1 ]]; then
 		start_pcp_subset
+		results2pcp_multiple "iteration:${iterations}"
 	fi
-	./phoronix-test-suite/phoronix-test-suite run $sub_test < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}.out
-	rm /tmp/ph_opts
+	rm  -f /tmp/results_${test_name}_${to_tuned_setting}_iter_${iterations}.out
+	start_time=$(retrieve_time_stamp)
+	./phoronix-test-suite/phoronix-test-suite run $sub_test < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}_iter_${iterations}.out
+	end_time=$(retrieve_time_stamp)
+	export end_time
+	export start_time
 	# If we're using PCP, snap the chalk line at the end of the iteration
 	# and log the iteration's result
 
 	if [[ $to_use_pcp -eq 1 ]]; then
-		echo "Send result to PCP archive"
-		result2pcp iterations ${iterations}
+		rm -f results_${sub_test}.csv
+		$TOOLS_BIN/test_header_info --front_matter --results_file results_${sub_test}.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
+		$run_dir/reduce_phoronix --sub_test $sub_test --out_file results_${sub_test}.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}_iter_${iterations}.out
+		cp results_${sub_test}.csv  /tmp
+		if [[ $sub_test == "cassandra" ]]; then
+			echo FILL
+		elif [[ $sub_test == "stress-ng" ]] || [[ $sub_test == "openssl" ]]; then
+			pcp_common
+		elif [[ $sub_test == "cockroach" ]]; then
+			pcp_cockroach
+		elif [[ $sub_test == "nginx" ]]; then
+			pcp_nginx
+		elif [[ $sub_test == "redis" ]]; then
+			pcp_redis
+		elif [[ $sub_test == "phpbench" ]]; then
+			pcp_phpbench
+		elif [[ $sub_test == "sqlite" ]]; then
+			pcp_sqlite
+		fi
 		stop_pcp_subset
 	fi
 done
+rm /tmp/ph_opts
 # If we're using PCP, stop logging
 if [[ $to_use_pcp -eq 1 ]]; then
 	echo "Stop PCP"
 	stop_pcp
+	shutdown_pcp
 fi
 #
 # Archive up the results.
@@ -292,14 +427,23 @@ ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 cp results_${test_name}_*.out $rdir
 ${curdir}/test_tools/move_data $curdir  $rdir
-cp /tmp/results_${test_name}_${to_tuned_setting}.out $rdir
+cp /tmp/results_${test_name}_${to_tuned_setting}*.out $rdir
+
+#
+# If pcp, we have already built the csv file.
+#
 pushd $rdir > /dev/null
-$TOOLS_BIN/test_header_info --front_matter --results_file results_${sub_test}.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
-#
-# We place the results first in results_check.csv so we can check to make sure
-# the tests actually ran.  After the check, we will add the run info to results_${sub_test}.csv.
-#
-$run_dir/reduce_phoronix --sub_test $sub_test --out_file results_${sub_test}.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}.out
+if [[ $to_use_pcp -eq 0 ]]; then
+	$TOOLS_BIN/test_header_info --front_matter --results_file results_${sub_test}.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
+	$run_dir/reduce_phoronix --sub_test $sub_test --out_file results_${sub_test}.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}_iterations_${iterations}.out
+else
+	mv /tmp/results_${sub_test}.csv .
+fi
+
 popd > /dev/null
+#
+# For now just use the first run.
+#
+
 ${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir "$RESULTSDIR ${pcpdir}" --test_name phoronix_${sub_test} --tuned_setting $to_tuned_setting --version none --user $to_user
 exit $rtc

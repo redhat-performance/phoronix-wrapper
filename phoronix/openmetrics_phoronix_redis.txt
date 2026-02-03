@@ -1,0 +1,12 @@
+iteration 0
+running 0
+numthreads 0
+runtime NaN
+throughput NaN
+latency NaN
+GET NaN
+LPOP NaN
+LPUSH NaN
+SADD NaN
+SET NaN
+ParallelConnections NaN

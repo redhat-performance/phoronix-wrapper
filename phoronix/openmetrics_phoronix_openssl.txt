@@ -1,0 +1,13 @@
+iteration 0
+running 0
+numthreads 0
+runtime NaN
+throughput NaN
+latency NaN
+SHA256 NaN
+SHA512 NaN
+RSA4096 NaN
+ChaCha20 NaN
+AES-128-GCM NaN
+AES-256-GCM NaN
+ChaCha20-Poly1305 NaN
