@@ -368,7 +368,6 @@ pcp_phpbench()
 
 for iterations  in 1 `seq 2 1 ${to_times_to_run}`
 do
-	echo iteration $iterations
 	# If we're using PCP, snap a chalk line at the start of the iteration
 	if [[ $to_use_pcp -eq 1 ]]; then
 		start_pcp_subset

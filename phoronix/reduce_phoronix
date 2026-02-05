@@ -73,8 +73,6 @@ reduce_line1_same_3_lines()
 		if [[ $line == *"${field1}"* ]]; then
 			# Extract First 2 fields
 			val1=$(echo "$line" | awk -F ': ' '{print $2}' | awk -F ' - ' '{print $1}')
-			echo $line
-			echo $val1
 			val2=$(echo "$line" | awk -F ': ' '{print $3}' | tr -d ':')
 		fi
 		if [[ $line == *"${field2}"* ]]; then
@@ -82,7 +80,8 @@ reduce_line1_same_3_lines()
 		fi
 		if [[ $line == *"${field3}"* ]]; then
 			val4=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
-			echo "$val1,$val2,$val3,$val4" | sed "s/\[1\;34m//g" >> $out_file
+			fields=`echo "$val1,$val2,$val3,$val4" | sed "s/[1\;34m//g"`
+			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "${in_file}"
 	exit 0
@@ -128,7 +127,8 @@ reduce_2_fields()
 			# Extract field3 value
 			f2=$(echo "$line" | awk -F "${field3} " '{print $2}' | tr -d '%')
 			# Append the extracted information to the output file
-			echo "$f1,$f2" | sed "s/\[1\;34m//g" >> $out_file
+			fields=`echo "$f1,$f2" | sed "s/[1\;34m//g"`
+			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "$in_file"
 	exit 0
@@ -218,7 +218,7 @@ reduce_apache-iotdb()
 		fi
 		# After reading the point_sec and latency for a test configuration, append it to the output CSV
 		if [[ -n "$device_count" && -n "$batch_size" && -n "$sensor_count" && -n "$client_number" ]]; then
-			echo "$device_count,$batch_size,$sensor_count,$client_number,${point_sec},$latency" >> "$out_file"
+			echo "$device_count,$batch_size,$sensor_count,$client_number,${point_sec},$latency,$start_time,$end_time" >> "$out_file"
 			device_count=""
 			batch_size=""
 			sensor_count=""
@@ -301,7 +301,7 @@ reduce_redis()
 			continue
 		fi
 		average=`echo $line| awk '{ print $2 }'| sed 's/[^a-zA-Z0-9.]//g'| sed "s/134m//g"`
-		echo "$test,$connections,$average" >> $out_file
+		echo "$test,$connections,$average,$start_time,$end_time" >> $out_file
 		header=0
 		found=0
 	done < "${in_file}"
