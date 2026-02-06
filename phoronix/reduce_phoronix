@@ -242,7 +242,7 @@ reduce_cassandra()
 
 reduce_openssl()
 {
-	reduce_3_fields "Algorithm,BPS,Deviation,Start_Date,End_Date" "Algorithm:" "Average:" "Deviation"
+	reduce_2_fields "Algorithm,BPS,Start_Date,End_Date" "Algorithm:" "Average:"
 }
 
 reduce_sqlite()

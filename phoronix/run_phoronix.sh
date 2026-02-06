@@ -303,7 +303,7 @@ pcp_cockroach()
 	while IFS= read -r line
 	do
 		concurrency=`echo $line | cut -d, -f 2`
-		average=`echo $line | cut -d, -f 3`
+		average=`echo $line | cut -d, -f 3 | sed "s///g"`
 		results2pcp_multiple "concurrency:${concurrency},average:${average}"
 	done < "$tfile"
 	rm $tfile
@@ -319,7 +319,6 @@ pcp_redis()
 		results2pcp_add_value "ParallelConnections:${i}"
 		while IFS= read -r line
 		do
-			echo line $line >> /tmp/dave
 			test=`echo $line | cut -d',' -f 1`
 			value=`echo $line | cut -d',' -f 3`
 			results2pcp_add_value  "$test:$value"
@@ -376,6 +375,7 @@ do
 		start_pcp_subset
 		results2pcp_multiple "iteration:${iterations}"
 	fi
+	ran=1
 	rm  -f /tmp/results_${test_name}_${to_tuned_setting}_iterations_${iterations}.out
 	start_time=$(retrieve_time_stamp)
 	./phoronix-test-suite/phoronix-test-suite run $sub_test < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}_iterations_${iterations}.out
