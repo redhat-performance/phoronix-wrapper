@@ -80,7 +80,7 @@ reduce_line1_same_3_lines()
 		fi
 		if [[ $line == *"${field3}"* ]]; then
 			val4=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
-			fields=`echo "$val1,$val2,$val3,$val4" | sed "s/[1\;34m//g"`
+			fields=`echo "$val1,$val2,$val3,$val4" | sed "s/\[1\;34m//g"`
 			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "${in_file}"
@@ -121,13 +121,13 @@ reduce_2_fields()
 	while IFS= read -r line; do
 		if [[ $line == *"${field1}"* ]]; then
 			# Extract Test name (after field1 and before the colon)
-			f1=$(echo "$line" | awk -F "${field1} " '{print $2}' | awk -F ':' '{print $1}')
+			f1=$(echo "$line" | awk -F "${field1} " '{print $2}' | awk -F ':' '{print $1}' | awk '{print $1}' | sed "s/ //g")
 		fi
 		if [[ $line == *"${field2}"* ]]; then
 			# Extract field3 value
 			f2=$(echo "$line" | awk -F "${field3} " '{print $2}' | tr -d '%')
 			# Append the extracted information to the output file
-			fields=`echo "$f1,$f2" | sed "s/[1\;34m//g"`
+			fields=`echo "$f1,$f2" | sed "s/\[1\;34m//g" | sed "s///g"`
 			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "$in_file"

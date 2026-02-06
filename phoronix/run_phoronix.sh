@@ -18,7 +18,8 @@
 
 test_index="Test All Options"
 test_index1="Test All Options"
-sub_test="stress-ng"
+#sub_test="stress-ng"
+sub_test="redis"
 rtc=0
 
 arguments="$@"
@@ -360,8 +361,10 @@ pcp_sqlite()
 
 pcp_phpbench()
 {
-	value=`grep '^[0-9]' results_phpbench.csv | tail -1 | cut -d' ' -f 1`
-	results2pcp_multiple "average:${value}"
+	value=`grep '^[0-9]' results_phpbench.csv | tail -1 | cut -d',' -f 1,2`
+	avg=`echo $value | cut -d',' -f 1`
+	dev=`echo $value | cut -d',' -f 2`
+	results2pcp_multiple "average:${avg},deviation:${dev}"
 	reset_pcp_om
 
 }
@@ -373,9 +376,9 @@ do
 		start_pcp_subset
 		results2pcp_multiple "iteration:${iterations}"
 	fi
-	rm  -f /tmp/results_${test_name}_${to_tuned_setting}_iter_${iterations}.out
+	rm  -f /tmp/results_${test_name}_${to_tuned_setting}_iterations_${iterations}.out
 	start_time=$(retrieve_time_stamp)
-	./phoronix-test-suite/phoronix-test-suite run $sub_test < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}_iter_${iterations}.out
+	./phoronix-test-suite/phoronix-test-suite run $sub_test < /tmp/ph_opts  >> /tmp/results_${test_name}_${to_tuned_setting}_iterations_${iterations}.out
 	end_time=$(retrieve_time_stamp)
 	export end_time
 	export start_time
@@ -385,7 +388,7 @@ do
 	if [[ $to_use_pcp -eq 1 ]]; then
 		rm -f results_${sub_test}.csv
 		$TOOLS_BIN/test_header_info --front_matter --results_file results_${sub_test}.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $GIT_VERSION --test_name $test_name
-		$run_dir/reduce_phoronix --sub_test $sub_test --out_file results_${sub_test}.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}_iter_${iterations}.out
+		$run_dir/reduce_phoronix --sub_test $sub_test --out_file results_${sub_test}.csv --in_file /tmp/results_${test_name}_${to_tuned_setting}_iterations_${iterations}.out
 		cp results_${sub_test}.csv  /tmp
 		if [[ $sub_test == "cassandra" ]]; then
 			echo FILL

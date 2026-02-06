@@ -4,3 +4,4 @@ numthreads 0
 runtime NaN
 throughput NaN
 average NaN
+deviation NaN
