@@ -303,7 +303,7 @@ pcp_cockroach()
 	while IFS= read -r line
 	do
 		concurrency=`echo $line | cut -d, -f 2`
-		average=`echo $line | cut -d, -f 3 | sed "s///g"`
+		average=`echo $line | cut -d, -f 3 | sed "s/1//g"`
 		results2pcp_multiple "concurrency:${concurrency},average:${average}"
 	done < "$tfile"
 	rm $tfile
