@@ -276,7 +276,7 @@ if [[ $to_use_pcp -eq 1 ]]; then
 	start_pcp ${pcpdir}/ ${test_name}_${sub_test} $pcp_cfg
 fi
 
-pcp_default()
+pcp_generic()
 {
 	while IFS= read -r line
 	do
@@ -392,7 +392,7 @@ do
 		if [[ $sub_test == "cassandra" ]]; then
 			echo FILL
 		elif [[ $sub_test == "stress-ng" ]] || [[ $sub_test == "openssl" ]]; then
-			pcp_default
+			pcp_generic
 		elif [[ $sub_test == "cockroach" ]]; then
 			pcp_cockroach
 		elif [[ $sub_test == "nginx" ]]; then
