@@ -1,0 +1,8 @@
+iteration 0
+running 0
+numthreads 0
+runtime NaN
+throughput NaN
+latency NaN
+connections NaN
+RPS NaN

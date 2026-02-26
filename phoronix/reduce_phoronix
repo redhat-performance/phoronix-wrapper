@@ -69,21 +69,20 @@ reduce_line1_same_3_lines()
 	#
 	echo $header >> "$out_file"
 	while IFS= read -r line; do
-	        # Check for lines containing workload and concurrency
-        	if [[ $line == *"${field1}"* ]]; then
-            		# Extract First 2 fields
-            		val1=$(echo "$line" | awk -F ': ' '{print $2}' | awk -F ' - ' '{print $1}')
-			echo $line
-			echo $val1
-            		val2=$(echo "$line" | awk -F ': ' '{print $3}' | tr -d ':')
-        	fi
-        	if [[ $line == *"${field2}"* ]]; then
-            		val3=$(echo "$line" | awk -F ': ' '{print $2}' | awk '{print $1}')
-        	fi
-        	if [[ $line == *"${field3}"* ]]; then
-            		val4=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
-	    		echo  "$val1:$val2:$val3:$val4" | sed "s/\[1\;34m//g" >> $out_file
-        	fi
+		# Check for lines containing workload and concurrency
+		if [[ $line == *"${field1}"* ]]; then
+			# Extract First 2 fields
+			val1=$(echo "$line" | awk -F ': ' '{print $2}' | awk -F ' - ' '{print $1}')
+			val2=$(echo "$line" | awk -F ': ' '{print $3}' | tr -d ':')
+		fi
+		if [[ $line == *"${field2}"* ]]; then
+			val3=$(echo "$line" | awk -F ': ' '{print $2}' | awk '{print $1}')
+		fi
+		if [[ $line == *"${field3}"* ]]; then
+			val4=$(echo "$line" | awk -F ': ' '{print $2}' | tr -d '%')
+			fields=`echo "$val1,$val2,$val3,$val4" | sed "s/\[1\;34m//g"`
+			echo "$fields","$start_time","$end_time" >> $out_file
+		fi
 	done < "${in_file}"
 	exit 0
 }
@@ -122,13 +121,14 @@ reduce_2_fields()
 	while IFS= read -r line; do
 		if [[ $line == *"${field1}"* ]]; then
 			# Extract Test name (after field1 and before the colon)
-			f1=$(echo "$line" | awk -F "${field1} " '{print $2}' | awk -F ':' '{print $1}')
+			f1=$(echo "$line" | awk -F "${field1} " '{print $2}' | awk -F ':' '{print $1}' | awk '{print $1}' | sed "s/ //g")
 		fi
 		if [[ $line == *"${field2}"* ]]; then
 			# Extract field3 value
 			f2=$(echo "$line" | awk -F "${field3} " '{print $2}' | tr -d '%')
 			# Append the extracted information to the output file
-	    		echo  "$f1:$f2" | sed "s/\[1\;34m//g" >> $out_file
+			fields=`echo "$f1,$f2" | sed "s/\[1\;34m//g" | sed "s///g"`
+			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "$in_file"
 	exit 0
@@ -176,7 +176,8 @@ reduce_3_fields()
 			# Extract field3 value
 			f3=$(echo "$line" | awk -F "${field3} " '{print $2}' | tr -d '%')
 			# Append the extracted information to the output file
-	    		echo  "$f1:$f2:$f3" | sed "s/\[1\;34m//g" >> $out_file
+			fields=`echo "$f1","$f2","$f3" | sed "s/\[1\;34m//g"`
+			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "$in_file"
 	exit 0
@@ -188,7 +189,7 @@ reduce_3_fields()
 reduce_apache-iotdb()
 {
 	# Header for CSV file
-	echo "device_count:batch_size:sensor_count:client_number:point_sec:latency" >> "$out_file"
+	echo "device_count,batch_size,sensor_count,client_number,point_sec,latency,Start_Date,End_Date" >> "$out_file"
 
 	# Initialize variables to store values for each test configuration
 	device_count=""
@@ -217,7 +218,7 @@ reduce_apache-iotdb()
 		fi
 		# After reading the point_sec and latency for a test configuration, append it to the output CSV
 		if [[ -n "$device_count" && -n "$batch_size" && -n "$sensor_count" && -n "$client_number" ]]; then
-			echo "$device_count:$batch_size:$sensor_count:$client_number:${point_sec:-}:$latency" >> "$out_file"
+			echo "$device_count,$batch_size,$sensor_count,$client_number,${point_sec},$latency,$start_time,$end_time" >> "$out_file"
 			device_count=""
 			batch_size=""
 			sensor_count=""
@@ -231,37 +232,42 @@ reduce_apache-iotdb()
 
 reduce_phpbench()
 {
-	reduce_2_fields "Average:Deviation" "Average:" "Deviation:"
+	reduce_2_fields "Average,Deviation,Start_Date,End_Date" "Average:" "Deviation:"
 }
 
 reduce_cassandra()
 {
-	reduce_3_fields "Test:Average:Deviation" "Test:" "Average:" "Deviation:"
+	reduce_3_fields "Test:Average,Deviation,Start_Date,End_Date" "Test:" "Average:" "Deviation:"
 }
 
 reduce_openssl()
 {
-	reduce_3_fields "Algorithm:BPS:Deviation" "Algorithm:" "Average:" "Deviation"
+	reduce_2_fields "Algorithm,BPS,Start_Date,End_Date" "Algorithm:" "Average:"
 }
 
 reduce_sqlite()
 {
-	reduce_3_fields "Threads:Average:Deviation" "Threads / Copies:" "Average:" "Deviation:"
+	reduce_3_fields "Threads,Average,Deviation,Start_Date,End_Date" "Threads / Copies:" "Average:" "Deviation:"
 }
 
 reduce_nginx()
 {
-	reduce_3_fields "Connections:RPS:Deviation" "Connections:" "Average:" "Deviation:"
+	reduce_3_fields "Connections,RPS,Deviation,Start_Date,End_Date" "Connections:" "Average:" "Deviation:"
 }
 
 reduce_stress-ng()
 {
-	reduce_3_fields "Test:Average:Deviation" "Test:" "Average:" "Deviation:"
+	reduce_3_fields "Test,Average,Deviation,Start_Date,End_Date" "Test:" "Average:" "Deviation:"
 }
 
 reduce_cockroach()
 {
-	reduce_line1_same_3_lines "Workload:Concurrency:Average:Deviation" "Workload" "Average" "Deviation"
+	#
+	# We cat the in_file, that wat we do not get truncacted
+	#
+	sed "s/KV,/KV/g" $in_file > worker
+	mv worker $in_file
+	reduce_line1_same_3_lines "Workload,Concurrency,Average,Deviation,Start_Date,End_Date" "Workload" "Average" "Deviation"
 }
 
 # 
@@ -269,7 +275,37 @@ reduce_cockroach()
 #
 reduce_redis()
 {
-	reduce_line1_same_3_lines "Test:ParallelConnections:Average:Deviation" "Test:" "Average:" "Deviation:"
+	echo "Test,Connections,Average,Start_Date,End_Date" >> $out_file
+	found=0
+	test=""
+	connections=""
+	header=0
+	while IFS= read -r line; do
+		if [[ $line == *"Test:"* ]]; then
+			if [[ $found -ne 1 ]]; then
+				found=1
+				continue
+			fi
+			found=2
+		fi
+		if [[ $found -ne 2 ]]; then
+			continue
+		fi
+		if [[ $header -ne 1 ]]; then
+			test=`echo $line | awk '{ print $2 }'`
+			connections=`echo $line | awk '{ print $6 }' | sed "s/://g"`
+			header=1
+			continue
+		fi
+		if [[ $line != *"Average:"* ]]; then
+			continue
+		fi
+		average=`echo $line| awk '{ print $2 }'| sed 's/[^a-zA-Z0-9.]//g'| sed "s/134m//g"`
+		echo "$test,$connections,$average,$start_time,$end_time" >> $out_file
+		header=0
+		found=0
+	done < "${in_file}"
+	exit 0
 }
 
 usage()
@@ -363,8 +399,8 @@ echo "# Subtest: $sub_test" >> $out_file
 #
 # Avoid a cascade of a case or if statement.
 #
-reduce="reduce_${sub_test}"
-$reduce
+
+reduce_${sub_test}
 #
 # If we got here, the test data reduction has not been defined.
 #
