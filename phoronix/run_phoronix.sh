@@ -18,8 +18,7 @@
 
 test_index="Test All Options"
 test_index1="Test All Options"
-#sub_test="stress-ng"
-sub_test="redis"
+sub_test="stress-ng"
 rtc=0
 
 arguments="$@"
@@ -277,7 +276,7 @@ if [[ $to_use_pcp -eq 1 ]]; then
 	start_pcp ${pcpdir}/ ${test_name}_${sub_test} $pcp_cfg
 fi
 
-pcp_common()
+pcp_default()
 {
 	while IFS= read -r line
 	do
@@ -393,7 +392,7 @@ do
 		if [[ $sub_test == "cassandra" ]]; then
 			echo FILL
 		elif [[ $sub_test == "stress-ng" ]] || [[ $sub_test == "openssl" ]]; then
-			pcp_common
+			pcp_default
 		elif [[ $sub_test == "cockroach" ]]; then
 			pcp_cockroach
 		elif [[ $sub_test == "nginx" ]]; then
