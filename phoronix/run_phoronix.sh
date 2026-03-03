@@ -41,7 +41,7 @@ usage()
 	echo "  --tools_git: Location to pick up the required tools git, default"
 	echo "    https://github.com/redhat-performance/test_tools-wrappers"
 	echo "  --usage: this usage message"
-	source test_tools/general_setup --usage
+	source ${TOOLS_BIN}/general_setup --usage
 }
 
 curdir=`pwd`
@@ -108,19 +108,6 @@ for arg in "$@"; do
 	fi
 done
 
-#
-# Check to see if the test tools directory exists.  If it does, we do not need to
-# clone the repo.
-#
-if [ ! -d "test_tools" ]; then
-        git clone $tools_git test_tools
-        if [ $? -ne 0 ]; then
-                error_out "Error pulling git $tools_git" 1
-        fi
-else
-	echo Found an existing test_tools directory, using it.
-fi
-
 if [ $show_usage -eq 1 ]; then
 	usage $0
 fi
@@ -137,13 +124,26 @@ fi
 # to_tuned_setting: tuned setting
 #
 
-${curdir}/test_tools/gather_data ${curdir}
-source test_tools/general_setup "$@"
+script_dir=$(realpath $(dirname $0))
+#
+# Check to see if the test tools directory exists.  If it does, we do not need to
+# clone the repo.
+#
+TOOLS_BIN="$HOME/test_tools"
+export TOOLS_BIN
+if [ ! -d "$TOOLS_BIN" ]; then
+	git clone $tools_git "$TOOLS_BIN"
+	if [ $? -ne 0 ]; then
+		exit_out "Error: pulling git $tools_git failed." 1
+	fi
+fi
+${TOOLS_BIN}/gather_data ${curdir}
+source ${TOOLS_BIN}/general_setup "$@"
 
 #
 # Install required packaging.
 #
-${TOOLS_BIN}/package_tool --wrapper_config ${run_dir}/phoronix.json --no_packages $to_no_pkg_install
+package_tool --wrapper_config ${run_dir}/phoronix.json --no_packages $to_no_pkg_install
 if [[ $? -ne 0 ]]; then
 	error_out "package tool returned failure" 1
 fi
@@ -427,7 +427,7 @@ fi
 ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
 
 cp results_${test_name}_*.out $rdir
-${curdir}/test_tools/move_data $curdir  $rdir
+${TOOLS_BIN}/move_data $curdir  $rdir
 cp /tmp/results_${test_name}_${to_tuned_setting}*.out $rdir
 
 #
@@ -446,5 +446,5 @@ popd > /dev/null
 # For now just use the first run.
 #
 
-${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --copy_dir "$RESULTSDIR ${pcpdir}" --test_name phoronix_${sub_test} --tuned_setting $to_tuned_setting --version none --user $to_user
+${TOOLS_BIN}/save_results --curdir $curdir --home_root $to_home_root --copy_dir "$RESULTSDIR ${pcpdir}" --test_name phoronix_${sub_test} --tuned_setting $to_tuned_setting --version none --user $to_user
 exit $rtc
