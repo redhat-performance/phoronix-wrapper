@@ -62,4 +62,3 @@ class Phoronix_Results (pydantic.BaseModel):
     Deviation: float = pydantic.Field(allow_inf_nan=False)
     Start_Date: datetime.datetime
     End_Date: datetime.datetime
-
