@@ -16,6 +16,7 @@ out_file=""
 sub_test=""
 in_file=""
 
+source ${TOOLS_BIN}/error_codes
 error_out()
 {
 	echo $1
@@ -84,7 +85,7 @@ reduce_line1_same_3_lines()
 			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "${in_file}"
-	exit 0
+	exit $E_SUCCESS
 }
 
 #
@@ -131,7 +132,7 @@ reduce_2_fields()
 			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "$in_file"
-	exit 0
+	exit $E_SUCCESS
 }
 
 #
@@ -180,7 +181,7 @@ reduce_3_fields()
 			echo "$fields","$start_time","$end_time" >> $out_file
 		fi
 	done < "$in_file"
-	exit 0
+	exit $E_SUCCESS
 }
 
 #
@@ -227,7 +228,7 @@ reduce_apache-iotdb()
 		latency=""
 		fi
 	done < "$in_file"
-	exit 0
+	exit $E_SUCCESS
 }
 
 reduce_phpbench()
@@ -305,7 +306,7 @@ reduce_redis()
 		header=0
 		found=0
 	done < "${in_file}"
-	exit 0
+	exit $E_SUCCESS
 }
 
 usage()
@@ -317,7 +318,7 @@ usage()
     echo "  --out_file  Specify output file"
     echo "  --sub_test  Specify the test data to reduce"
     echo "  -h, --usage          Show help"
-    exit 1
+    exit $E_USAGE
 }
 
 ARGUMENT_LIST=(
@@ -343,8 +344,7 @@ opts=$(getopt \
 # Report any errors
 #
 if [ $? -ne 0 ]; then
-	error_out "Error with option parsing" 1
-        exit
+	error_out "Error with option parsing" $E_GENERAL
 fi
 
 eval set --$opts
@@ -368,7 +368,6 @@ while [[ $# -gt 0 ]]; do
 		;;
 	        --usage)
 			usage
-                        exit
                 ;;
 		--)
 			break;
@@ -376,18 +375,17 @@ while [[ $# -gt 0 ]]; do
 		*)
 			echo option not found $1
 			usage
-			exit
 		;;
         esac
 done
 if [[ $sub_test == "" ]]; then
-	error_out "Need to designate a sub test" 1
+	error_out "Need to designate a sub test" $E_GENERAL
 fi
 if [[ $out_file == "" ]]; then
-	error_out "Need to designate an output file" 1
+	error_out "Need to designate an output file" $E_GENERAL
 fi
 if [[ $in_file == "" ]]; then
-	error_out "Need to designate an in file." 1
+	error_out "Need to designate an in file." $E_GENERAL
 fi
 
 #
@@ -404,4 +402,4 @@ reduce_${sub_test}
 #
 # If we got here, the test data reduction has not been defined.
 #
-error_out "$sub_test is not recognized for reduction" 1
+error_out "$sub_test is not recognized for reduction" $E_GENERAL
