@@ -133,22 +133,11 @@ script_dir=$(realpath $(dirname $0))
 TOOLS_BIN="$HOME/test_tools"
 export TOOLS_BIN
 
-attempt_tools_wget()
+attempt_tools_generic()
 {
+	method="$1"
         if [[ ! -d "$TOOLS_BIN" ]]; then
-                wget ${tools_git}/archive/refs/heads/main.zip
-                if [[ $? -eq 0 ]]; then
-                        unzip -q main.zip
-                        mv test_tools-wrappers-main ${TOOLS_BIN}
-                        rm main.zip
-                fi
-        fi
-}
-
-attempt_tools_curl()
-{
-        if [[ ! -d "$TOOLS_BIN" ]]; then
-                curl -L -O ${tools_git}/archive/refs/heads/main.zip
+                $method ${tools_git}/archive/refs/heads/main.zip
                 if [[ $? -eq 0 ]]; then
                         unzip -q main.zip
                         mv test_tools-wrappers-main ${TOOLS_BIN}
@@ -162,13 +151,13 @@ attempt_tools_git()
         if [[ ! -d "$TOOLS_BIN" ]]; then
                 git clone $tools_git "$TOOLS_BIN"
                 if [ $? -ne 0 ]; then
-                        exit_out "Error: pulling git $tools_git failed." 101
+                        error_out "Error: pulling git $tools_git failed." 101
                 fi
         fi
 }
 
-attempt_tools_wget
-attempt_tools_curl
+attempt_tools_generic "wget"
+attempt_tools_generic "curl -L -O "
 attempt_tools_git
 
 source ${TOOLS_BIN}/error_codes
