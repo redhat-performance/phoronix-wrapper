@@ -2,14 +2,14 @@
 
 ## Description
 
-This wrapper facilitates the automated execution of benchmarks via the Phoronix Test Suite. The Phoronix Test Suite is an open-source benchmarking platform that provides a standardized framework for running reproducible benchmarks across a wide range of system components including CPU, memory, storage, networking, and database workloads.
+This wrapper automates running various benchmarks that use the Phoronix Test Suite. The Phoronix Test Suite is an open-source benchmarking platform that offers a standardized, reproducible framework for testing various system components, such as CPU, memory, storage, networking, and database workloads.
 
 The wrapper provides:
 - Automated Phoronix Test Suite download, installation, and execution.
-- Support for multiple sub-tests (stress-ng, redis, cockroach, nginx, sqlite, phpbench, openssl, cassandra, apache-iotdb).
+- Support for multiple sub-tests (apache-iotdb, cassandra, cockroach, nginx, openssl, phpbench, redis, sqlite, stress-ng).
 - Automated test option selection and input handling.
 - Result collection, processing, and verification.
-- CSV and JSON output formats with per-test Pydantic schema validation.
+- CSV output format. JSON output and per-test Pydantic schema validation are available when `--use_pcp` is enabled.
 - System configuration metadata capture.
 - Integration with test_tools framework.
 - Optional Performance Co-Pilot (PCP) integration with per-test openmetrics definitions.
@@ -19,7 +19,7 @@ The wrapper provides:
 ```
 Phoronix Options:
   --sub_test <name>: Which phoronix sub-test to run.
-      Supported: stress-ng, redis, cockroach, nginx, sqlite, phpbench, openssl, cassandra, apache-iotdb.
+      Supported: apache-iotdb, cassandra, cockroach, nginx, openssl, phpbench, redis, sqlite, stress-ng.
       Default is stress-ng.
   --test_index <value>: Test index to run. Default is "Test All Options".
       Selects which specific test variant to execute within the chosen sub-test.
@@ -83,8 +83,7 @@ The `run_phoronix.sh` script performs the following workflow:
    - Extracts performance metrics from raw Phoronix output using the `reduce_phoronix` utility.
    - Uses test-specific parsing functions to handle different output formats.
    - Generates CSV files with headers and performance data.
-   - Creates JSON output for verification.
-   - Validates results against per-test Pydantic schemas.
+   - When `--use_pcp` is enabled, creates JSON output and validates results against per-test Pydantic schemas.
 
 8. **PCP Data Collection** (if enabled):
    - Populates test-specific PCP metrics using dedicated functions (pcp_generic, pcp_redis, pcp_cockroach, pcp_nginx, pcp_sqlite, pcp_phpbench).
@@ -120,13 +119,13 @@ The script will automatically install the Phoronix Test Suite and required depen
 
 ## Supported Sub-Tests
 
-The wrapper supports the following Phoronix sub-tests, each with dedicated result parsing, schema validation, and PCP metric definitions:
+The wrapper supports the following Phoronix sub-tests, each with dedicated result parsing. PCP metric support is available for select sub-tests:
 
-### stress-ng
-System stress testing workload generator that loads and stresses kernel interfaces. Measures performance across 58 benchmark types including CPU, memory, cryptography, scheduling, and I/O operations. Results report Average performance and Deviation for each test type.
+### apache-iotdb
+Apache IoTDB time-series database performance testing. Measures performance across varying device counts, batch sizes, sensor counts, and client numbers. Reports points per second and latency.
 
-### redis
-Redis in-memory database performance testing. Measures throughput for GET, SET, LPOP, and SADD operations across varying numbers of parallel connections.
+### cassandra
+Apache Cassandra NoSQL database performance testing. Uses generic three-field reduction (test, average, deviation). Runs without additional test input options. Note: PCP metric support is not yet implemented for this sub-test.
 
 ### cockroach
 CockroachDB distributed SQL database performance testing. Measures read operation throughput with varying concurrency levels. Reports workload type, concurrency, average performance, and deviation.
@@ -134,20 +133,20 @@ CockroachDB distributed SQL database performance testing. Measures read operatio
 ### nginx
 Nginx web server performance testing. Measures requests per second (RPS) across varying numbers of concurrent connections.
 
-### sqlite
-SQLite embedded database performance testing. Measures throughput across varying thread counts.
+### openssl
+OpenSSL cryptographic operation performance testing. Measures throughput in bytes per second for algorithms including SHA256, SHA512, RSA4096, ChaCha20, AES-128-GCM, AES-256-GCM, and ChaCha20-Poly1305.
 
 ### phpbench
 PHP benchmark suite measuring PHP execution performance. Reports average score and deviation.
 
-### openssl
-OpenSSL cryptographic operation performance testing. Measures throughput in bytes per second for algorithms including SHA256, SHA512, RSA4096, ChaCha20, AES-128-GCM, AES-256-GCM, and ChaCha20-Poly1305.
+### redis
+Redis in-memory database performance testing. Measures throughput for GET, SET, LPOP, and SADD operations across varying numbers of parallel connections.
 
-### cassandra
-Apache Cassandra NoSQL database performance testing. Uses generic three-field reduction (test, average, deviation). Runs without additional test input options.
+### sqlite
+SQLite embedded database performance testing. Measures throughput across varying thread counts.
 
-### apache-iotdb
-Apache IoTDB time-series database performance testing. Measures performance across varying device counts, batch sizes, sensor counts, and client numbers. Reports points per second and latency.
+### stress-ng
+System stress testing workload generator that loads and stresses kernel interfaces. Measures performance across 58 benchmark types including CPU, memory, cryptography, scheduling, and I/O operations. Results report Average performance and Deviation for each test type.
 
 ## Output Files
 
@@ -225,8 +224,7 @@ The `reduce_phoronix` utility transforms raw Phoronix Test Suite output into str
 
 After CSV generation:
 - Non-ASCII characters (ANSI color codes) are stripped.
-- CSV is converted to JSON using csv_to_json from test_tools.
-- JSON is validated against the corresponding Pydantic schema using verify_results.
+- When `--use_pcp` is enabled, CSV is converted to JSON using csv_to_json from test_tools and validated against the corresponding Pydantic schema using verify_results.
 
 ## Return Codes
 
@@ -242,7 +240,7 @@ Exit codes indicate specific failure points for automated testing workflows.
 
 ### Phoronix Test Suite Version
 - The wrapper uses Phoronix Test Suite version v10.8.1 (pinned for reproducibility).
-- The suite is cloned fresh on each run to ensure a clean state.
+- The suite is cloned if not already present in `./phoronix-test-suite` (delete the directory to force a fresh clone).
 
 ### PHP Requirement
 - The Phoronix Test Suite requires PHP to run. The wrapper automatically installs php-cli and php-xml.
@@ -253,19 +251,14 @@ Exit codes indicate specific failure points for automated testing workflows.
 - The "n" response at the end prevents automatic result upload to OpenBenchmarking.org.
 
 ### PCP Integration
-- Each sub-test has a dedicated openmetrics definition file (`openmetrics_phoronix_${sub_test}.txt`) that defines the metrics collected.
+- PCP support is available for select sub-tests. Each supported sub-test has a dedicated openmetrics definition file (`openmetrics_phoronix_${sub_test}.txt`) that defines the metrics collected.
 - PCP data is stored in timestamped directories under `/tmp/pcp_YYYY.MM.DD-HH.MM.SS/`.
 - Test-specific PCP functions populate metrics appropriate to each benchmark type.
+- Known gaps: cassandra PCP handler is a placeholder, and apache-iotdb does not have PCP handling.
 
 ### Schema Validation
 - Each sub-test has a corresponding Pydantic schema (`results_schema_${sub_test}.py`) that validates the structure and types of output data.
 - Schemas enforce value constraints (e.g., positive values for performance metrics) and valid enum values for test names and algorithm identifiers.
-
-### Performance Tips
-- Run multiple iterations to verify consistency.
-- Ensure system is idle (no other workloads) for best results.
-- Consider the active tuned profile on RHEL systems.
-- Use `--use_pcp` to collect detailed performance counters for analysis.
 
 ### Troubleshooting
 - If Phoronix Test Suite fails to install, verify that PHP packages are installed.
