@@ -238,7 +238,7 @@ reduce_phpbench()
 
 reduce_cassandra()
 {
-	reduce_3_fields "Test:Average,Deviation,Start_Date,End_Date" "Test:" "Average:" "Deviation:"
+	reduce_3_fields "Test,Average,Deviation,Start_Date,End_Date" "Test:" "Average:" "Deviation:"
 }
 
 reduce_openssl()
