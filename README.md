@@ -25,14 +25,20 @@ Phoronix Options:
       Selects which specific test variant to execute within the chosen sub-test.
 
 General test_tools options:
+  --debug: Enables bash -x output, useful for debugging issues with wrappers.
   --home_parent <value>: Parent home directory. If not set, defaults to current working directory.
   --host_config <value>: Host configuration name, defaults to current hostname.
   --iterations <value>: Number of times to run the test, defaults to 1.
   --iteration_default <value>: Value to set iterations to, if default is not set.
-  --no_pkg_install: Test is not to use dnf/yum/apt or other such tools for package installation.
+  --no_system_packages: Do not install system packages via the system package manager.
+  --no_pip_packages: Do not install python pip packages via pip.
+  --no_pkg_install: Test is not to install any packages.
   --run_user: User that is actually running the test on the test system. Defaults to current user.
   --sys_type: Type of system working with (aws, azure, hostname). Defaults to hostname.
+  --test_tools_release <tag>: Version tag of test tools to use.
   --sysname: Name of the system running, used in determining config files. Defaults to hostname.
+  --json_skip: Skip JSON conversion of test CSV results, default is 0.
+  --verify_skip: Skip test verifications against output, default is 0.
   --test_verification <test_verify_file>: Runs the test verification. Information is in the test_verify file in the tests github.
   --tuned_setting: Used in naming the results directory. For RHEL, defaults to current active tuned profile.
       For non-RHEL systems, defaults to 'none'.
