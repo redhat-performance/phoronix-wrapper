@@ -358,7 +358,7 @@ pcp_nginx()
 	do
 		connections=`echo $line | cut -d, -f 1`
 		rps=`echo $line | cut -d, -f 2`
-		results2pcp_multiple "connections:${connections},RPS:${RPS}"
+		results2pcp_multiple "connections:${connections},RPS:${rps}"
 	done < "$tfile"
 	reset_pcp_om
 	rm $tfile
